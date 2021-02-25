@@ -15,14 +15,14 @@ if args == 1:
 
 # first parameter is the Scrivener file
 if args >= 2:
-    base = sys.argv[1]
+    scrivfile = sys.argv[1]
     # Scrivener files are actually directories (on a Mac)
-    if not os.path.isdir(base):
-        print("ERROR: Scrivener file " + base + " does not exist.")
+    if not os.path.isdir(scrivfile):
+        print("ERROR: Scrivener file " + scrivfile + " does not exist.")
         exit(2)
 
-scrivx = os.path.basename(base) + 'x'
-scrivxfile = os.path.join(base, scrivx)
+scrivx = os.path.basename(scrivfile) + 'x'
+scrivxfile = os.path.join(scrivfile, scrivx)
 if not os.path.isfile(scrivxfile):
     print("ERROR: This does not appear to be a Scrivener 3 file.")
     exit(3)
@@ -33,11 +33,42 @@ if args >= 3:
 else:
     # if not given, create from Scrivener file name
     p = scrivx.replace('.scrivx', '.pltr')
-    plottrfile = os.path.join(os.path.dirname(base), p)
+    plottrfile = os.path.join(os.path.dirname(scrivfile), p)
 
 # any other arguments ignored (for now)
 
-#print("Reading: " + scrivxfile + ", Writing: " + plottrfile)
+
+### ###########################################################################
+
+def write_plottrfile(filename, cards, beats):
+
+    bstring = '"beats":' + json.dumps(beats)
+    cstring = '"cards":' + json.dumps(cards)
+
+    file = { 'fileName': filename, 'loaded': True, 'dirty': False, 'version': '2021.2.19' }
+    fstring = '"file":' + json.dumps(file)
+
+    with open(filename, 'w') as fs:
+        fs.write("# Note: This is not a complete Plottr file (yet)!\n")
+        fs.write('{' + fstring)
+        fs.write(bstring)
+        fs.write(cstring)
+        fs.write('}')
+
+def read_synopsis(scrivpackage, uuid):
+
+    syn = scrivpackage + '/Files/Data/' + uuid + '/synopsis.txt'
+    if os.path.isfile(syn):
+        fs = open(syn, 'r')
+        s = fs.read()
+        fs.close()
+    else: # doesn't have a synopsis
+        s = ''
+
+    return s
+
+### ###########################################################################
+
 
 # tbd: error handling (we did check it exists, though)
 sf = open(scrivxfile, 'r')
@@ -77,14 +108,7 @@ for item in root.findall('.//BinderItem'):
             # for now, that's all we need (tbd: labels and such)
             break
 
-    uuid = item.attrib['UUID']
-    syn = base + '/Files/Data/' + uuid + '/synopsis.txt'
-    if os.path.isfile(syn):
-        fs = open(syn, 'r')
-        s = fs.read()
-        fs.close()
-    else: # doesn't have a synopsis
-        s = ''
+    s = read_synopsis(scrivfile, item.attrib['UUID'])
 
     card = {}
     card['id'] = cardId
@@ -116,15 +140,4 @@ for item in root.findall('.//BinderItem'):
     beatId = beatId + 1
     position = position + 1
 
-bstring = '"beats":' + json.dumps(beats)
-cstring = '"cards":' + json.dumps(cards)
-
-file = { 'fileName': plottrfile, 'loaded': True, 'dirty': False, 'version': '2021.2.19' }
-fstring = '"file":' + json.dumps(file)
-
-with open(plottrfile, 'w') as fs:
-    fs.write("# This is not a complete Plottr file (yet)!\n")
-    fs.write('{' + fstring)
-    fs.write(bstring)
-    fs.write(cstring)
-    fs.write('}')
+write_plottrfile(plottrfile, cards, beats)
