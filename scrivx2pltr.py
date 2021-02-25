@@ -40,20 +40,41 @@ else:
 
 ### ###########################################################################
 
-def write_plottrfile(filename, cards, beats):
+def write_plottrfile(filename, booktitle, cards, beats):
 
-    bstring = '"beats":' + json.dumps(beats)
-    cstring = '"cards":' + json.dumps(cards)
+    plottr_version = '2021.2.19'
 
-    file = { 'fileName': filename, 'loaded': True, 'dirty': False, 'version': '2021.2.19' }
-    fstring = '"file":' + json.dumps(file)
+    # mostly just the default values, taken from an "empty" Plottr file
+    file = { 'fileName': filename, 'loaded': True, 'dirty': False, 'version': plottr_version }
+    ui = { 'currentView': 'timeline', 'currentTimeline': 1, 'timelineIsExpanded': True, 'orientation': 'horizontal', 'darkMode': False, 'characterSort': 'name~asc', 'characterFilter': None, 'placeSort': 'name-asc', 'placeFilter': None, 'noteSort': 'title-asc', 'noteFilter': None, 'timelineFilter': None, 'timelineScrollPosition': { 'x': 0, 'y': 0 }, 'timeline': { 'size': 'large' } }
+    series = { 'name': booktitle, 'premise': '', 'genre': '', 'theme': '', 'templates': [] }
+    books = { '1': { 'id': 1, 'title': booktitle, 'premise': '', 'genre': '', 'theme': '', 'templates': [], 'timelineTemplates': [], 'imageId': None }, 'allIds': [1] }
+    categories = { 'characters': [ { 'id': 1, 'name': 'Main', 'position': 0 }, { 'id': 2, 'name': 'Supporting', 'position': 1 }, { 'id': 3, 'name': 'Other', 'position': 2 } ], 'places': [], 'notes': [], 'tags': [] }
+    characters = [] # hope to fill these in later
+    customAttributes = { 'characters': [], 'places': [], 'scenes': [], 'lines': [] }
+    lines = [ { 'id': 1, 'bookId': 1, 'color': '#6cace4', 'title': 'Main Plot', 'position': 0, 'characterId': None, 'expanded': None, 'fromTemplateId': None }, { 'id': 2, 'bookId': 'series', 'color': '#6cace4', 'title': 'Main Plot', 'position': 0, 'characterId': None, 'expanded': None, 'fromTemplateId': None } ]
+    notes = []
+    places = []
+    tags = []
+    images = {}
+
+    fstring = '"file":' + json.dumps(file) + ','
+    ustring = '"ui":' + json.dumps(ui) + ','
+    sstring = '"series":' + json.dumps(series) + ','
+    bstring = '"books":' + json.dumps(books) + ','
+    btstring = '"beats":' + json.dumps(beats) + ','
+    cdstring = '"cards":' + json.dumps(cards) + ','
+    cstring = '"categories":' + json.dumps(categories) + ','
+    chstring = '"characters":' + json.dumps(characters) + ','
+    custring = '"customAttributes":' + json.dumps(customAttributes) + ','
+    lstring = '"lines":' + json.dumps(lines) + ','
+    nstring = '"notes":' + json.dumps(notes) + ','
+    pstring = '"places":' + json.dumps(places) + ','
+    tstring = '"tags":' + json.dumps(tags) + ','
+    istring = '"images":' + json.dumps(images)
 
     with open(filename, 'w') as fs:
-        fs.write("# Note: This is not a complete Plottr file (yet)!\n")
-        fs.write('{' + fstring)
-        fs.write(bstring)
-        fs.write(cstring)
-        fs.write('}')
+        fs.write('{' + fstring + ustring + sstring + bstring + btstring + cdstring + cstring + chstring + custring + lstring + nstring + pstring + tstring + istring + '}')
 
 def read_synopsis(scrivpackage, uuid):
 
@@ -140,4 +161,5 @@ for item in root.findall('.//BinderItem'):
     beatId = beatId + 1
     position = position + 1
 
-write_plottrfile(plottrfile, cards, beats)
+booktitle = scrivx.replace('.scrivx', '') # for now
+write_plottrfile(plottrfile, booktitle, cards, beats)
