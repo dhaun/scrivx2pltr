@@ -88,6 +88,25 @@ def read_synopsis(scrivpackage, uuid):
 
     return s
 
+def read_booktitle(scrivfile):
+
+    booktitle = ''
+    compile_xml = os.path.join(scrivfile, 'Settings/compile.xml')
+    if os.path.isfile(compile_xml):
+        with open(compile_xml, 'r') as fs:
+            xmlstring = fs.read()
+            cxml = ET.fromstring(xmlstring)
+            item = cxml.find('.//ProjectTitle')
+            if item is not None:
+                booktitle = item.text
+
+    # fallback: use file name
+    if len(booktitle) == 0:
+        b = os.path.basename(scrivfile)
+        booktitle = b.replace('.scriv', '')
+
+    return booktitle
+
 ### ###########################################################################
 
 
@@ -161,5 +180,5 @@ for item in root.findall('.//BinderItem'):
     beatId = beatId + 1
     position = position + 1
 
-booktitle = scrivx.replace('.scrivx', '') # for now
+booktitle = read_booktitle(scrivfile)
 write_plottrfile(plottrfile, booktitle, cards, beats)
