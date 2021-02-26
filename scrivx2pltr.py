@@ -130,7 +130,7 @@ beats = []
 # beatId 1 + 2 seem to have special meaning
 beats.append({ 'id': 1, 'bookId': 'series', 'position': 0, 'title': 'auto', 'time': 0, 'templates': [], 'autoOutlineSort': True, 'fromTemplateId' : None })
 beats.append({ 'id': 2, 'bookId': 1, 'position': 0, 'title': 'auto', 'time': 0, 'templates': [], 'autoOutlineSort': True, 'fromTemplateId' : None })
-beatId = 3
+beatId = 2
 
 # first Binder item is the Manuscript folder (might be renamed)
 root = binder.find('.//BinderItem')
