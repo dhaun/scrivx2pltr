@@ -40,7 +40,7 @@ else:
 
 ### ###########################################################################
 
-def write_plottrfile(filename, booktitle, cards, beats):
+def write_plottrfile(filename, booktitle, cards, beats, characters):
 
     plottr_version = '2021.2.19'
 
@@ -50,7 +50,6 @@ def write_plottrfile(filename, booktitle, cards, beats):
     series = { 'name': booktitle, 'premise': '', 'genre': '', 'theme': '', 'templates': [] }
     books = { '1': { 'id': 1, 'title': booktitle, 'premise': '', 'genre': '', 'theme': '', 'templates': [], 'timelineTemplates': [], 'imageId': None }, 'allIds': [1] }
     categories = { 'characters': [ { 'id': 1, 'name': 'Main', 'position': 0 }, { 'id': 2, 'name': 'Supporting', 'position': 1 }, { 'id': 3, 'name': 'Other', 'position': 2 } ], 'places': [], 'notes': [], 'tags': [] }
-    characters = [] # hope to fill these in later
     customAttributes = { 'characters': [], 'places': [], 'scenes': [], 'lines': [] }
     lines = [ { 'id': 1, 'bookId': 1, 'color': '#6cace4', 'title': 'Main Plot', 'position': 0, 'characterId': None, 'expanded': None, 'fromTemplateId': None }, { 'id': 2, 'bookId': 'series', 'color': '#6cace4', 'title': 'Main Plot', 'position': 0, 'characterId': None, 'expanded': None, 'fromTemplateId': None } ]
     notes = []
@@ -106,6 +105,37 @@ def read_booktitle(scrivfile):
         booktitle = b.replace('.scriv', '')
 
     return booktitle
+
+def read_characters(scrivfile, binder):
+
+    characters = []
+
+    # first we need to find the Characters folder
+    found = False
+    for item in binder.findall('./Binder/BinderItem'):
+        if item.attrib['Type'] == 'Folder':
+            for child in item:
+                if child.tag == 'Title' and child.text == 'Characters':
+                    found = True
+                    break
+            if found:
+                break
+
+    if found:
+        chId = 1
+        for char in item.findall('.//BinderItem'):
+            ch = { 'id': 1, 'name': '', 'description': '', 'notes': [], 'color': None, 'cards': [], 'noteIds': [], 'templates': [], 'tags': [], 'categoryId': '1', 'imageId': '', 'bookIds': [1] }
+            if char.attrib['Type'] == 'Text':
+                for child in char:
+                    if child.tag == 'Title':
+                        ch['id'] = chId
+                        ch['name'] = child.text
+
+                        characters.append(ch)
+                        chId = chId + 1
+
+    return characters
+
 
 ### ###########################################################################
 
@@ -181,4 +211,6 @@ for item in root.findall('.//BinderItem'):
     position = position + 1
 
 booktitle = read_booktitle(scrivfile)
-write_plottrfile(plottrfile, booktitle, cards, beats)
+characters = read_characters(scrivfile, binder)
+write_plottrfile(plottrfile, booktitle, cards, beats, characters)
+
