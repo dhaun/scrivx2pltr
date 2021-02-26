@@ -3,10 +3,15 @@
 # written by Dirk Haun <dirk AT haun-online DOT de>
 # licensed under the MIT License
 #
+import base64
 import json
 import os.path
 import sys
 import xml.etree.ElementTree as ET
+
+# global variables
+images = {}
+num_images = 0
 
 args = len(sys.argv)
 if args == 1:
@@ -42,6 +47,8 @@ else:
 
 def write_plottrfile(filename, booktitle, cards, beats, characters):
 
+    global images
+
     plottr_version = '2021.2.19'
 
     # mostly just the default values, taken from an "empty" Plottr file
@@ -55,7 +62,6 @@ def write_plottrfile(filename, booktitle, cards, beats, characters):
     notes = []
     places = []
     tags = []
-    images = {}
 
     fstring = '"file":' + json.dumps(file) + ','
     ustring = '"ui":' + json.dumps(ui) + ','
@@ -108,6 +114,8 @@ def read_booktitle(scrivfile):
 
 def read_characters(scrivfile, binder):
 
+    global images, num_images
+
     characters = []
 
     # first we need to find the Characters folder
@@ -123,16 +131,45 @@ def read_characters(scrivfile, binder):
 
     if found:
         chId = 1
+        files_data = os.path.join(scrivfile, 'Files', 'Data')
+
         for char in item.findall('.//BinderItem'):
             ch = { 'id': 1, 'name': '', 'description': '', 'notes': [], 'color': None, 'cards': [], 'noteIds': [], 'templates': [], 'tags': [], 'categoryId': '1', 'imageId': '', 'bookIds': [1] }
             if char.attrib['Type'] == 'Text':
+                uuid = char.attrib['UUID']
                 for child in char:
                     if child.tag == 'Title':
                         ch['id'] = chId
                         ch['name'] = child.text
+                    elif child.tag == 'MetaData':
+                        ext = child.find('.//IndexCardImageFileExtension')
+                        if ext is not None:
+                            if len(ext.text) > 0:
+                                imgname = 'card-image.' + ext.text
+                                img = os.path.join(files_data, uuid, imgname)
+                                if os.path.isfile(img):
+                                    with open(img, 'rb') as fs:
+                                        imgdata = fs.read() 
+                                    ibdata = base64.b64encode(imgdata)
+                                    ibstring = ibdata.decode('utf-8')
+                                    num_images = num_images + 1
 
-                        characters.append(ch)
-                        chId = chId + 1
+                                    if ext.text == 'jpg' or ext.text == 'jpeg':
+                                        imgtype = 'jpeg'
+                                    elif ext.text == 'png':
+                                        imgtype = 'png'
+                                    elif ext.text == 'gif':
+                                        imgtype = 'gif'
+                                    else:
+                                        imgtype = 'unknown'
+                                    data = 'data:image/' + imgtype + ';base64,' + ibstring
+                                    i = { 'id': num_images, 'name': imgname, 'path': img, 'data': data }
+
+                                    images[str(num_images)] = i
+                                    ch['imageId'] = str(num_images)
+
+                characters.append(ch)
+                chId = chId + 1
 
     return characters
 
