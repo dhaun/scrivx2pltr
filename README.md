@@ -21,8 +21,8 @@ I'd like to make some of this possible. Characters and places are effectively ju
 ## Requirements
 
 - Python 3
-- Scrivener 3
-- a current version of Plottr (they made some changes to the file format in early 2021)
+- [Scrivener 3](https://www.literatureandlatte.com/scrivener/overview)
+- a current version of [Plottr](https://plottr.com/) (they made some changes to the file format in early 2021)
 
 
 ## Caveats and Side Effects
