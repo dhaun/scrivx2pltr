@@ -1,8 +1,9 @@
 # scrivx2pltr - Create Plottr scene cards from an existing Scrivener file
 #
-# written by Dirk Haun <dirk AT haun-online DOT de>
+# written 2021 by Dirk Haun <dirk AT haun-online DOT de>
 # licensed under the MIT License
 #
+import argparse
 import base64
 import json
 import os.path
@@ -13,34 +14,29 @@ import xml.etree.ElementTree as ET
 images = {}
 num_images = 0
 
-args = len(sys.argv)
-if args == 1:
-    print("usage: " + sys.argv[0] + " <scrivener-file> [<plottr-file>]")
-    exit(1)
+parser = argparse.ArgumentParser(description = 'Creating a Plottr file from a Scrivener file')
+parser.add_argument('scrivfile', help = 'Scrivener file to read')
+parser.add_argument('-o', '--output', metavar = 'pltrfile', help = 'Plottr file to write')
+args = parser.parse_args()
 
-# first parameter is the Scrivener file
-if args >= 2:
-    scrivfile = sys.argv[1]
-    # Scrivener files are actually directories (on a Mac)
-    if not os.path.isdir(scrivfile):
-        print("ERROR: Scrivener file " + scrivfile + " does not exist.")
-        exit(2)
-
-scrivx = os.path.basename(scrivfile) + 'x'
-scrivxfile = os.path.join(scrivfile, scrivx)
+# sanity check Scrivener file
+if args.scrivfile[-1] == '/':
+    args.scrivfile = args.scrivfile[:-1]
+if not os.path.isdir(args.scrivfile):
+    print("ERROR: Scrivener file " + scrivfile + " does not exist.")
+    exit(2)
+scrivx = os.path.basename(args.scrivfile) + 'x'
+scrivxfile = os.path.join(args.scrivfile, scrivx)
 if not os.path.isfile(scrivxfile):
     print("ERROR: This does not appear to be a Scrivener 3 file.")
     exit(3)
 
-# second (optional) argument is the output file
-if args >= 3:
-    plottrfile = sys.argv[2]
+if args.output:
+    plottrfile = args.output
 else:
     # if not given, create from Scrivener file name
     p = scrivx.replace('.scrivx', '.pltr')
-    plottrfile = os.path.join(os.path.dirname(scrivfile), p)
-
-# any other arguments ignored (for now)
+    plottrfile = os.path.join(os.path.dirname(args.scrivfile), p)
 
 
 ### ###########################################################################
@@ -307,7 +303,7 @@ for item in manuscript.findall('.//BinderItem'):
             # for now, that's all we need (tbd: labels and such)
             break
 
-    s = read_synopsis(scrivfile, item.attrib['UUID'])
+    s = read_synopsis(args.scrivfile, item.attrib['UUID'])
 
     card = {}
     card['id'] = cardId
@@ -339,8 +335,8 @@ for item in manuscript.findall('.//BinderItem'):
     beatId = beatId + 1
     position = position + 1
 
-booktitle = read_booktitle(scrivfile)
-characters = read_characters(scrivfile, binder)
-places = read_places(scrivfile, binder)
+booktitle = read_booktitle(args.scrivfile)
+characters = read_characters(args.scrivfile, binder)
+places = read_places(args.scrivfile, binder)
 write_plottrfile(plottrfile, booktitle, cards, beats, characters, places)
 
