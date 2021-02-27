@@ -12,10 +12,15 @@ It does not and never will synchronise between Plottr and Scrivener.
 Plottr can already export to Scrivener and they are supposedly [working on synchronisation](https://plottr.com/our-roadmap/), too.
 
 
+## What it sort-of does
+
+Characters and Places are created from files in the respective Scrivener folders. Images are exported, too. The content of the files is still missing, though, mostly due to lack of an idea how to parse RTF into something Plottr can understand. 
+
+
 ## What it doesn't do yet
 
-Export characters, places, and labels. Also, images.
-I'd like to make some of this possible. Characters and places are effectively just free-form documents in Scrivener, whereas they are much more structured in Plottr. We'll see what's possible and how much sense it's going to make.
+Export notes and labels.
+There are no standards for those in Scrivener, though.
 
 
 ## Requirements
