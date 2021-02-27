@@ -133,8 +133,10 @@ def read_characters(scrivfile, binder):
 
         for char in item.findall('.//BinderItem'):
             ch = { 'id': 1, 'name': '', 'description': '', 'notes': [], 'color': None, 'cards': [], 'noteIds': [], 'templates': [], 'tags': [], 'categoryId': '1', 'imageId': '', 'bookIds': [1] }
+
             if char.attrib['Type'] == 'Text':
                 uuid = char.attrib['UUID']
+                content_path = os.path.join(files_data, uuid)
                 for child in char:
                     if child.tag == 'Title':
                         ch['id'] = chId
@@ -144,11 +146,16 @@ def read_characters(scrivfile, binder):
                         if ext is not None:
                             if len(ext.text) > 0:
                                 imgname = 'card-image.' + ext.text
-                                img = os.path.join(files_data, uuid, imgname)
+                                img = os.path.join(content_path, imgname)
                                 i = read_image(img)
 
                                 if i > 0:
                                     ch['imageId'] = str(i)
+
+                # tbd: need to find a good solution to read RTF
+                # n = read_rtf(os.path.join(content_path, 'content.rtf'))
+                # if len(n) > 0:
+                #     ch['notes'] = format_text(n)
 
                 characters.append(ch)
                 chId = chId + 1
@@ -189,6 +196,25 @@ def read_image(file):
         imgid = num_images
 
     return imgid
+
+def read_rtf(file):
+
+    r = ''
+    if os.path.isfile(file):
+        with open(file, 'r') as fs:
+            rtf = fs.read() 
+    r = rtf
+
+    return r
+
+def format_text(text):
+
+    f = []
+
+    if len(text) > 0:
+        f.append( { 'children': [ { 'text': text } ] })
+
+    return f
 
 ### ###########################################################################
 
