@@ -273,16 +273,15 @@ binder = ET.fromstring(sx)
 cards = []
 cardId = 1
 lineId = 1
-position = 1
+position = 0
 bookId = None
 positionWithinLine = 0
 positionInBeat = 0
 
 beats = []
-# beatId 1 + 2 seem to have special meaning
+# beatId 1 seems to have a special meaning
 beats.append({ 'id': 1, 'bookId': 'series', 'position': 0, 'title': 'auto', 'time': 0, 'templates': [], 'autoOutlineSort': True, 'fromTemplateId' : None })
-beats.append({ 'id': 2, 'bookId': 1, 'position': 0, 'title': 'auto', 'time': 0, 'templates': [], 'autoOutlineSort': True, 'fromTemplateId' : None })
-beatId = 2
+beatId = 2 # first beat for us to use
 
 # find the Manuscript folder (might be renamed)
 for item in binder.findall('.//BinderItem'):
