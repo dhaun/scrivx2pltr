@@ -45,7 +45,7 @@ else:
 
 ### ###########################################################################
 
-def write_plottrfile(filename, booktitle, cards, beats, characters):
+def write_plottrfile(filename, booktitle, cards, beats, characters, places):
 
     global images
 
@@ -60,7 +60,6 @@ def write_plottrfile(filename, booktitle, cards, beats, characters):
     customAttributes = { 'characters': [], 'places': [], 'scenes': [], 'lines': [] }
     lines = [ { 'id': 1, 'bookId': 1, 'color': '#6cace4', 'title': 'Main Plot', 'position': 0, 'characterId': None, 'expanded': None, 'fromTemplateId': None }, { 'id': 2, 'bookId': 'series', 'color': '#6cace4', 'title': 'Main Plot', 'position': 0, 'characterId': None, 'expanded': None, 'fromTemplateId': None } ]
     notes = []
-    places = []
     tags = []
 
     fstring = '"file":' + json.dumps(file) + ','
@@ -161,6 +160,56 @@ def read_characters(scrivfile, binder):
                 chId = chId + 1
 
     return characters
+
+def read_places(scrivfile, binder):
+
+    places = []
+
+    # first we need to find the Places folder
+    found = False
+    for item in binder.findall('./Binder/BinderItem'):
+        if item.attrib['Type'] == 'Folder':
+            for child in item:
+                if child.tag == 'Title' and child.text == 'Places':
+                    found = True
+                    break
+            if found:
+                break
+
+    if found:
+        plId = 1
+        files_data = os.path.join(scrivfile, 'Files', 'Data')
+
+        for place in item.findall('.//BinderItem'):
+            pl = { 'id': 1, 'name': '', 'description': '', 'notes': [], 'color': None, 'cards': [], 'noteIds': [], 'templates': [], 'tags': [], 'imageId': '', 'bookIds': [1] }
+
+            if place.attrib['Type'] == 'Text':
+                uuid = place.attrib['UUID']
+                content_path = os.path.join(files_data, uuid)
+                for child in place:
+                    if child.tag == 'Title':
+                        pl['id'] = plId
+                        pl['name'] = child.text
+                    elif child.tag == 'MetaData':
+                        ext = child.find('.//IndexCardImageFileExtension')
+                        if ext is not None:
+                            if len(ext.text) > 0:
+                                imgname = 'card-image.' + ext.text
+                                img = os.path.join(content_path, imgname)
+                                i = read_image(img)
+
+                                if i > 0:
+                                    pl['imageId'] = str(i)
+
+                # tbd: need to find a good solution to read RTF
+                # n = read_rtf(os.path.join(content_path, 'content.rtf'))
+                # if len(n) > 0:
+                #     pl['notes'] = format_text(n)
+
+                places.append(pl)
+                plId = plId + 1
+
+    return places
 
 # reads an image into the global(!) images list
 def read_image(file):
@@ -292,5 +341,6 @@ for item in manuscript.findall('.//BinderItem'):
 
 booktitle = read_booktitle(scrivfile)
 characters = read_characters(scrivfile, binder)
-write_plottrfile(plottrfile, booktitle, cards, beats, characters)
+places = read_places(scrivfile, binder)
+write_plottrfile(plottrfile, booktitle, cards, beats, characters, places)
 
