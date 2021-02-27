@@ -114,8 +114,6 @@ def read_booktitle(scrivfile):
 
 def read_characters(scrivfile, binder):
 
-    global images, num_images
-
     characters = []
 
     # first we need to find the Characters folder
@@ -147,32 +145,50 @@ def read_characters(scrivfile, binder):
                             if len(ext.text) > 0:
                                 imgname = 'card-image.' + ext.text
                                 img = os.path.join(files_data, uuid, imgname)
-                                if os.path.isfile(img):
-                                    with open(img, 'rb') as fs:
-                                        imgdata = fs.read() 
-                                    ibdata = base64.b64encode(imgdata)
-                                    ibstring = ibdata.decode('utf-8')
-                                    num_images = num_images + 1
+                                i = read_image(img)
 
-                                    if ext.text == 'jpg' or ext.text == 'jpeg':
-                                        imgtype = 'jpeg'
-                                    elif ext.text == 'png':
-                                        imgtype = 'png'
-                                    elif ext.text == 'gif':
-                                        imgtype = 'gif'
-                                    else:
-                                        imgtype = 'unknown'
-                                    data = 'data:image/' + imgtype + ';base64,' + ibstring
-                                    i = { 'id': num_images, 'name': imgname, 'path': img, 'data': data }
-
-                                    images[str(num_images)] = i
-                                    ch['imageId'] = str(num_images)
+                                if i > 0:
+                                    ch['imageId'] = str(i)
 
                 characters.append(ch)
                 chId = chId + 1
 
     return characters
 
+# reads an image into the global(!) images list
+def read_image(file):
+
+    global images, num_images
+
+    imgid = 0
+
+    if os.path.isfile(file):
+        with open(file, 'rb') as fs:
+            imgdata = fs.read() 
+
+        ibdata = base64.b64encode(imgdata)
+        ibstring = ibdata.decode('utf-8')
+
+        filename = os.path.basename(file)
+        x = filename.split('.')
+        ext = x[-1]
+
+        if ext == 'jpg' or ext == 'jpeg':
+            imgtype = 'jpeg'
+        elif ext == 'png':
+            imgtype = 'png'
+        elif ext == 'gif':
+            imgtype = 'gif'
+        else: # what other image types could there be?
+            imgtype = 'unknown'
+        data = 'data:image/' + imgtype + ';base64,' + ibstring
+        i = { 'id': num_images, 'name': filename, 'path': file, 'data': data }
+
+        num_images = num_images + 1
+        images[str(num_images)] = i
+        imgid = num_images
+
+    return imgid
 
 ### ###########################################################################
 
