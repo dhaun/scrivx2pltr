@@ -219,10 +219,8 @@ def format_text(text):
 ### ###########################################################################
 
 
-# tbd: error handling (we did check it exists, though)
-sf = open(scrivxfile, 'r')
-sx = sf.read()
-sf.close()
+with open(scrivxfile, 'r') as fs:
+    sx = fs.read()
 
 binder = ET.fromstring(sx)
 
@@ -241,11 +239,14 @@ beats.append({ 'id': 1, 'bookId': 'series', 'position': 0, 'title': 'auto', 'tim
 beats.append({ 'id': 2, 'bookId': 1, 'position': 0, 'title': 'auto', 'time': 0, 'templates': [], 'autoOutlineSort': True, 'fromTemplateId' : None })
 beatId = 2
 
-# first Binder item is the Manuscript folder (might be renamed)
-root = binder.find('.//BinderItem')
+# find the Manuscript folder (might be renamed)
+for item in binder.findall('.//BinderItem'):
+    if item.attrib['Type'] == 'DraftFolder':
+        manuscript = item
+        break
 
 # now iterating over all Binder items in the Manuscript folder
-for item in root.findall('.//BinderItem'):
+for item in manuscript.findall('.//BinderItem'):
 
     # tbd: handling folders - option to include?
     if item.attrib['Type'] == 'Folder':
