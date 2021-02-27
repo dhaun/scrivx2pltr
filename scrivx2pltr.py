@@ -73,7 +73,7 @@ def write_plottrfile(filename, booktitle, cards, beats, characters, places):
     tstring = '"tags":' + json.dumps(tags) + ','
     istring = '"images":' + json.dumps(images)
 
-    with open(filename, 'w') as fs:
+    with open(filename, 'w', encoding = 'utf-8') as fs:
         fs.write('{' + fstring + ustring + sstring + bstring + btstring + cdstring + cstring + chstring + custring + lstring + nstring + pstring + tstring + istring + '}')
 
 def read_synopsis(scrivpackage, uuid):
@@ -93,7 +93,7 @@ def read_booktitle(scrivfile):
     booktitle = ''
     compile_xml = os.path.join(scrivfile, 'Settings/compile.xml')
     if os.path.isfile(compile_xml):
-        with open(compile_xml, 'r') as fs:
+        with open(compile_xml, 'r', encoding = 'utf-8') as fs:
             xmlstring = fs.read()
             cxml = ET.fromstring(xmlstring)
             item = cxml.find('.//ProjectTitle')
@@ -264,7 +264,7 @@ def format_text(text):
 ### ###########################################################################
 
 
-with open(scrivxfile, 'r') as fs:
+with open(scrivxfile, 'r', encoding = 'utf-8') as fs:
     sx = fs.read()
 
 binder = ET.fromstring(sx)
