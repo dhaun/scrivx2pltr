@@ -23,7 +23,7 @@ args = parser.parse_args()
 if args.scrivfile[-1] == '/':
     args.scrivfile = args.scrivfile[:-1]
 if not os.path.isdir(args.scrivfile):
-    print("ERROR: Scrivener file " + scrivfile + " does not exist.")
+    print("ERROR: Scrivener file " + args.scrivfile + " does not exist.")
     exit(2)
 scrivx = os.path.basename(args.scrivfile) + 'x'
 scrivxfile = os.path.join(args.scrivfile, scrivx)
@@ -78,11 +78,10 @@ def write_plottrfile(filename, booktitle, cards, beats, characters, places):
 
 def read_synopsis(scrivpackage, uuid):
 
-    syn = scrivpackage + '/Files/Data/' + uuid + '/synopsis.txt'
+    syn = os.path.join(scrivpackage, 'Files', 'Data', uuid, 'synopsis.txt')
     if os.path.isfile(syn):
-        fs = open(syn, 'r')
-        s = fs.read()
-        fs.close()
+        with open(syn, 'r', encoding = 'utf-8') as fs:
+            s = fs.read()
     else: # doesn't have a synopsis
         s = ''
 
@@ -95,10 +94,11 @@ def read_booktitle(scrivfile):
     if os.path.isfile(compile_xml):
         with open(compile_xml, 'r', encoding = 'utf-8') as fs:
             xmlstring = fs.read()
-            cxml = ET.fromstring(xmlstring)
-            item = cxml.find('.//ProjectTitle')
-            if item is not None:
-                booktitle = item.text
+
+        cxml = ET.fromstring(xmlstring)
+        item = cxml.find('.//ProjectTitle')
+        if item is not None:
+            booktitle = item.text
 
     # fallback: use file name
     if len(booktitle) == 0:
