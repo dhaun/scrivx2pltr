@@ -17,6 +17,7 @@ num_images = 0
 parser = argparse.ArgumentParser(description = 'Creating a Plottr file from a Scrivener file')
 parser.add_argument('scrivfile', help = 'Scrivener file to read')
 parser.add_argument('-o', '--output', metavar = 'pltrfile', help = 'Plottr file to write')
+parser.add_argument('--foldersAsScenes', action = 'store_true', default = False, help = 'Create scene cards for folders, too')
 args = parser.parse_args()
 
 # sanity check Scrivener file
@@ -292,8 +293,9 @@ for item in binder.findall('.//BinderItem'):
 # now iterating over all Binder items in the Manuscript folder
 for item in manuscript.findall('.//BinderItem'):
 
-    # tbd: handling folders - option to include?
-    if item.attrib['Type'] == 'Folder':
+    # Folders in Scrivener can have a content, just like regular files
+    # Include them as scenes, if requested via the --foldersAsScenes option
+    if item.attrib['Type'] == 'Folder' and not args.foldersAsScenes:
         continue
 
     for child in item:
