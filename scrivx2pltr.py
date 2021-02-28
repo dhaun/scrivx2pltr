@@ -294,6 +294,58 @@ def format_text(text):
 
     return f
 
+def parse_binderitem(item):
+
+    global args
+    global cards, beats
+    global cardId, lineId, beatId, bookId, position, positionWithinLine, positionInBeat
+
+    if item.attrib['Type'] == 'Text' or (item.attrib['Type'] == 'Folder' and args.foldersAsScenes):
+        # add this as a scene
+
+        title = ''
+        child = item.find('Title')
+        if child is not None:
+            title = child.text
+        # for now, the Title is all we can handle (tbd: labels and such)
+
+        s = read_synopsis(args.scrivfile, item.attrib['UUID'])
+
+        card = {}
+        card['id'] = cardId
+        card['lineId'] = lineId
+        card['beatId'] = beatId
+        card['bookId'] = bookId
+        card['positionWithinLine'] = positionWithinLine
+        card['positionInBeat'] = positionInBeat
+        card['title'] = title
+        desc = {}
+        desc['type'] = 'paragraph'
+        txt = {}
+        txt['text'] = s
+        desc['children'] = [ txt ]
+        card['description'] = [ desc ]
+        card['tags'] = []
+        card['characters'] = []
+        card['places'] = []
+        card['templates'] = []
+        card['imageId'] = None
+        card['fromTemplateId'] = None
+
+        cards.append(card)
+        cardId = cardId + 1
+
+        # update beats
+        beats.append({ 'id': beatId, 'bookId': 1, 'position': position, 'title': 'auto', 'time': 0, 'templates': [], 'autoOutlineSort': True, 'fromTemplateId' : None })
+
+        beatId = beatId + 1
+        position = position + 1
+
+    # recurse for any child items / subfolders
+    if item.find('Children') is not None:
+        for child in item.find('Children'):
+            parse_binderitem(child)
+
 ### ###########################################################################
 
 
@@ -316,57 +368,14 @@ beats = []
 beats.append({ 'id': 1, 'bookId': 'series', 'position': 0, 'title': 'auto', 'time': 0, 'templates': [], 'autoOutlineSort': True, 'fromTemplateId' : None })
 beatId = 2 # first beat for us to use
 
-# find the Manuscript folder (might be renamed)
+# find the Manuscript folder, aka DraftFolder
 for item in binder.findall('.//BinderItem'):
     if item.attrib['Type'] == 'DraftFolder':
         manuscript = item
         break
 
-# now iterating over all Binder items in the Manuscript folder
-for item in manuscript.findall('.//BinderItem'):
-
-    # Folders in Scrivener can have a content, just like regular files
-    # Include them as scenes, if requested via the --foldersAsScenes option
-    if item.attrib['Type'] == 'Folder' and not args.foldersAsScenes:
-        continue
-
-    for child in item:
-        if child.tag == 'Title':
-            title = child.text
-            # for now, that's all we need (tbd: labels and such)
-            break
-
-    s = read_synopsis(args.scrivfile, item.attrib['UUID'])
-
-    card = {}
-    card['id'] = cardId
-    card['lineId'] = lineId
-    card['beatId'] = beatId
-    card['bookId'] = bookId
-    card['positionWithinLine'] = positionWithinLine
-    card['positionInBeat'] = positionInBeat
-    card['title'] = title
-    desc = {}
-    desc['type'] = 'paragraph'
-    txt = {}
-    txt['text'] = s
-    desc['children'] = [ txt ]
-    card['description'] = [ desc ]
-    card['tags'] = []
-    card['characters'] = []
-    card['places'] = []
-    card['templates'] = []
-    card['imageId'] = None
-    card['fromTemplateId'] = None
-
-    cards.append(card)
-    cardId = cardId + 1
-
-    # update beats
-    beats.append({ 'id': beatId, 'bookId': 1, 'position': position, 'title': 'auto', 'time': 0, 'templates': [], 'autoOutlineSort': True, 'fromTemplateId' : None })
-
-    beatId = beatId + 1
-    position = position + 1
+for item in manuscript.find('Children'):
+    parse_binderitem(item)
 
 booktitle = read_booktitle(args.scrivfile)
 characters = read_characters(args.scrivfile, binder)
