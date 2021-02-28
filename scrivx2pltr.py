@@ -18,6 +18,7 @@ parser = argparse.ArgumentParser(description = 'Creating a Plottr file from a Sc
 parser.add_argument('scrivfile', help = 'Scrivener file to read')
 parser.add_argument('-o', '--output', metavar = 'pltrfile', help = 'Plottr file to write')
 parser.add_argument('--foldersAsScenes', action = 'store_true', default = False, help = 'Create scene cards for folders, too')
+parser.add_argument('--foldersAsPlotlines', action = 'store_true', default = False, help = 'Start a new plotline for each folder')
 parser.add_argument('--maxCharacters', type = int, default = -1, help = 'Max. number of Characters to read')
 parser.add_argument('--maxPlaces', type = int, default = -1, help = 'Max. number of Places to read')
 parser.add_argument('--charactersFolder', default = 'Characters', help = 'Name of the Characters folder, if renamed')
@@ -48,7 +49,7 @@ else:
 
 def write_plottrfile(filename, booktitle, cards, beats, characters, places):
 
-    global images
+    global images, lines, lineId_max
 
     plottr_version = '2021.2.19'
 
@@ -59,7 +60,8 @@ def write_plottrfile(filename, booktitle, cards, beats, characters, places):
     books = { '1': { 'id': 1, 'title': booktitle, 'premise': '', 'genre': '', 'theme': '', 'templates': [], 'timelineTemplates': [], 'imageId': None }, 'allIds': [1] }
     categories = { 'characters': [ { 'id': 1, 'name': 'Main', 'position': 0 }, { 'id': 2, 'name': 'Supporting', 'position': 1 }, { 'id': 3, 'name': 'Other', 'position': 2 } ], 'places': [], 'notes': [], 'tags': [] }
     customAttributes = { 'characters': [], 'places': [], 'scenes': [], 'lines': [] }
-    lines = [ { 'id': 1, 'bookId': 1, 'color': '#6cace4', 'title': 'Main Plot', 'position': 0, 'characterId': None, 'expanded': None, 'fromTemplateId': None }, { 'id': 2, 'bookId': 'series', 'color': '#6cace4', 'title': 'Main Plot', 'position': 0, 'characterId': None, 'expanded': None, 'fromTemplateId': None } ]
+    # required special plotline
+    lines.append({ 'id': lineId_max + 1, 'bookId': 'series', 'color': '#6cace4', 'title': 'Main Plot', 'position': 0, 'characterId': None, 'expanded': None, 'fromTemplateId': None })
     notes = []
     tags = []
 
@@ -297,8 +299,24 @@ def format_text(text):
 def parse_binderitem(item):
 
     global args
-    global cards, beats
-    global cardId, lineId, beatId, bookId, position, positionWithinLine, positionInBeat
+    global cards, beats, defaultColors
+    global lineId, lineId_max
+    global cardId, beatId, bookId, position, positionWithinLine, positionInBeat
+
+    if args.foldersAsPlotlines:
+        if item.find('Children') is not None:
+            lineId_last = lineId
+            lineId_max = lineId_max + 1
+            lineId = lineId_max
+            child = item.find('Title')
+            if child is None:
+                plotline_title = 'Side Plot'
+            else:
+                plotline_title = child.text
+
+            # add plotline
+            col = defaultColors[(lineId - 1) % 6]
+            lines.append({ 'id': lineId, 'bookId': 1, 'color': col, 'title': plotline_title, 'position': 0, 'characterId': None, 'expanded': None, 'fromTemplateId': None })
 
     if item.attrib['Type'] == 'Text' or (item.attrib['Type'] == 'Folder' and args.foldersAsScenes):
         # add this as a scene
@@ -346,6 +364,11 @@ def parse_binderitem(item):
         for child in item.find('Children'):
             parse_binderitem(child)
 
+        if args.foldersAsPlotlines:
+            if lineId > lineId_max:
+                lineId_max = lineId
+            lineId = lineId_last
+
 ### ###########################################################################
 
 
@@ -357,16 +380,23 @@ binder = ET.fromstring(sx)
 # initialize Plottr data
 cards = []
 cardId = 1
-lineId = 1
 position = 0
 bookId = None
 positionWithinLine = 0
 positionInBeat = 0
 
+lines = []
+# default plotline
+lines.append({ 'id': 1, 'bookId': 1, 'color': '#6cace4', 'title': 'Main Plot', 'position': 0, 'characterId': None, 'expanded': None, 'fromTemplateId': None })
+lineId = 1
+lineId_max = 1
+
 beats = []
 # beatId 1 seems to have a special meaning
 beats.append({ 'id': 1, 'bookId': 'series', 'position': 0, 'title': 'auto', 'time': 0, 'templates': [], 'autoOutlineSort': True, 'fromTemplateId' : None })
 beatId = 2 # first beat for us to use
+
+defaultColors = [ '#6cace4', '#78be20', '#e5554f', '#ff7f32', '#ffc72c', '#0b1117' ]
 
 # find the Manuscript folder, aka DraftFolder
 for item in binder.findall('.//BinderItem'):
