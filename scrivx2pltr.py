@@ -18,6 +18,8 @@ parser = argparse.ArgumentParser(description = 'Creating a Plottr file from a Sc
 parser.add_argument('scrivfile', help = 'Scrivener file to read')
 parser.add_argument('-o', '--output', metavar = 'pltrfile', help = 'Plottr file to write')
 parser.add_argument('--foldersAsScenes', action = 'store_true', default = False, help = 'Create scene cards for folders, too')
+parser.add_argument('--maxCharacters', type = int, default = -1, help = 'Max. number of Characters to read')
+parser.add_argument('--maxPlaces', type = int, default = -1, help = 'Max. number of Places to read')
 args = parser.parse_args()
 
 # sanity check Scrivener file
@@ -110,7 +112,13 @@ def read_booktitle(scrivfile):
 
 def read_characters(scrivfile, binder):
 
+    global args
+
     characters = []
+
+    if args.maxCharacters == 0:
+        # we were asked not to read characters
+        return characters
 
     # first we need to find the Characters folder
     found = False
@@ -156,11 +164,21 @@ def read_characters(scrivfile, binder):
                 characters.append(ch)
                 chId = chId + 1
 
+                if args.maxCharacters > 0 and chId > args.maxCharacters:
+                    # reached max. number of characters to read
+                    break
+
     return characters
 
 def read_places(scrivfile, binder):
 
+    global args
+
     places = []
+
+    if args.maxPlaces == 0:
+        # we were asked not to read places
+        return places
 
     # first we need to find the Places folder
     found = False
@@ -205,6 +223,10 @@ def read_places(scrivfile, binder):
 
                 places.append(pl)
                 plId = plId + 1
+
+                if args.maxPlaces > 0 and plId > args.maxPlaces:
+                    # reached max. number of places to read
+                    break
 
     return places
 
