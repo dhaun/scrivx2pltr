@@ -20,6 +20,8 @@ parser.add_argument('-o', '--output', metavar = 'pltrfile', help = 'Plottr file 
 parser.add_argument('--foldersAsScenes', action = 'store_true', default = False, help = 'Create scene cards for folders, too')
 parser.add_argument('--maxCharacters', type = int, default = -1, help = 'Max. number of Characters to read')
 parser.add_argument('--maxPlaces', type = int, default = -1, help = 'Max. number of Places to read')
+parser.add_argument('--charactersFolder', default = 'Characters', help = 'Name of the Characters folder, if renamed')
+parser.add_argument('--placesFolder', default = 'Places', help = 'Name of the Places folder, if renamed')
 args = parser.parse_args()
 
 # sanity check Scrivener file
@@ -117,15 +119,19 @@ def read_characters(scrivfile, binder):
     characters = []
 
     if args.maxCharacters == 0:
-        # we were asked not to read characters
+        # we were asked not to read Characters
         return characters
+
+    foldername = 'Characters'
+    if len(args.charactersFolder) > 0:
+        foldername = args.charactersFolder
 
     # first we need to find the Characters folder
     found = False
     for item in binder.findall('./Binder/BinderItem'):
         if item.attrib['Type'] == 'Folder':
             for child in item:
-                if child.tag == 'Title' and child.text == 'Characters':
+                if child.tag == 'Title' and child.text == foldername:
                     found = True
                     break
             if found:
@@ -165,7 +171,7 @@ def read_characters(scrivfile, binder):
                 chId = chId + 1
 
                 if args.maxCharacters > 0 and chId > args.maxCharacters:
-                    # reached max. number of characters to read
+                    # reached max. number of Characters to read
                     break
 
     return characters
@@ -177,15 +183,19 @@ def read_places(scrivfile, binder):
     places = []
 
     if args.maxPlaces == 0:
-        # we were asked not to read places
+        # we were asked not to read Places
         return places
+
+    foldername = 'Places'
+    if len(args.placesFolder) > 0:
+        foldername = args.placesFolder
 
     # first we need to find the Places folder
     found = False
     for item in binder.findall('./Binder/BinderItem'):
         if item.attrib['Type'] == 'Folder':
             for child in item:
-                if child.tag == 'Title' and child.text == 'Places':
+                if child.tag == 'Title' and child.text == foldername:
                     found = True
                     break
             if found:
@@ -225,7 +235,7 @@ def read_places(scrivfile, binder):
                 plId = plId + 1
 
                 if args.maxPlaces > 0 and plId > args.maxPlaces:
-                    # reached max. number of places to read
+                    # reached max. number of Places to read
                     break
 
     return places
