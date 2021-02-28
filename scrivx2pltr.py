@@ -164,6 +164,10 @@ def read_characters(scrivfile, binder):
                                 if i > 0:
                                     ch['imageId'] = str(i)
 
+                s = read_synopsis(scrivfile, uuid)
+                if len(s) > 0:
+                    ch['description'] = s
+
                 # tbd: need to find a good solution to read RTF
                 # n = read_rtf(os.path.join(content_path, 'content.rtf'))
                 # if len(n) > 0:
@@ -227,6 +231,10 @@ def read_places(scrivfile, binder):
 
                                 if i > 0:
                                     pl['imageId'] = str(i)
+
+                s = read_synopsis(scrivfile, uuid)
+                if len(s) > 0:
+                    pl['description'] = s
 
                 # tbd: need to find a good solution to read RTF
                 # n = read_rtf(os.path.join(content_path, 'content.rtf'))
