@@ -308,7 +308,7 @@ def parse_binderitem(item):
 
     global args
     global cards, beats, defaultColors
-    global lineId, lineId_max
+    global lineId, lineId_max, position_for_line
     global cardId, beatId, bookId, position, positionWithinLine, positionInBeat
 
     if not args.flattenTimeline:
@@ -321,10 +321,11 @@ def parse_binderitem(item):
                 plotline_title = 'Side Plot'
             else:
                 plotline_title = child.text
+            position_for_line = position_for_line + 1
 
             # add plotline
             col = defaultColors[(lineId - 1) % 6]
-            lines.append({ 'id': lineId, 'bookId': 1, 'color': col, 'title': plotline_title, 'position': 0, 'characterId': None, 'expanded': None, 'fromTemplateId': None })
+            lines.append({ 'id': lineId, 'bookId': 1, 'color': col, 'title': plotline_title, 'position': position_for_line, 'characterId': None, 'expanded': None, 'fromTemplateId': None })
 
     if item.attrib['Type'] == 'Text' or (item.attrib['Type'] == 'Folder' and args.foldersAsScenes):
         # add this as a scene
@@ -398,6 +399,7 @@ lines = []
 lines.append({ 'id': 1, 'bookId': 1, 'color': '#6cace4', 'title': 'Main Plot', 'position': 0, 'characterId': None, 'expanded': None, 'fromTemplateId': None })
 lineId = 1
 lineId_max = 1
+position_for_line = 0
 
 beats = []
 # beatId 1 seems to have a special meaning
