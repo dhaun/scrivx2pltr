@@ -18,7 +18,7 @@ parser = argparse.ArgumentParser(description = 'Creating a Plottr file from a Sc
 parser.add_argument('scrivfile', help = 'Scrivener file to read')
 parser.add_argument('-o', '--output', metavar = 'pltrfile', help = 'Plottr file to write')
 parser.add_argument('--foldersAsScenes', action = 'store_true', default = False, help = 'Create scene cards for folders, too')
-parser.add_argument('--foldersAsPlotlines', action = 'store_true', default = False, help = 'Start a new plotline for each folder')
+parser.add_argument('--flattenTimeline', action = 'store_true', default = False, help = 'Keep all scenes in one timeline')
 parser.add_argument('--maxCharacters', type = int, default = -1, help = 'Max. number of Characters to read')
 parser.add_argument('--maxPlaces', type = int, default = -1, help = 'Max. number of Places to read')
 parser.add_argument('--charactersFolder', default = 'Characters', help = 'Name of the Characters folder, if renamed')
@@ -311,7 +311,7 @@ def parse_binderitem(item):
     global lineId, lineId_max
     global cardId, beatId, bookId, position, positionWithinLine, positionInBeat
 
-    if args.foldersAsPlotlines:
+    if not args.flattenTimeline:
         if item.find('Children') is not None:
             lineId_last = lineId
             lineId_max = lineId_max + 1
@@ -372,7 +372,7 @@ def parse_binderitem(item):
         for child in item.find('Children'):
             parse_binderitem(child)
 
-        if args.foldersAsPlotlines:
+        if not args.flattenTimeline:
             if lineId > lineId_max:
                 lineId_max = lineId
             lineId = lineId_last
