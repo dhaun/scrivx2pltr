@@ -20,7 +20,7 @@ Characters and Places are created from files in the respective Scrivener folders
 ## What it doesn't do yet
 
 Export notes and labels.
-There are no standards for those in Scrivener, though.
+Not sure how to do this yet, since there are no standards for those in Scrivener.
 
 
 ## Requirements
@@ -29,6 +29,27 @@ There are no standards for those in Scrivener, though.
 - [Scrivener 3](https://www.literatureandlatte.com/scrivener/overview)
 - a current version of [Plottr](https://plottr.com/) (they made some changes to the file format in early 2021)
 
+## Usage
+
+### Basic Use
+You can simply pass your Scrivener 3 project to the script like so:
+
+`python3 scrivx2pltr.py YourProject.scriv`
+
+This will create the Plottr file in the same directory as your Scrivener project. If you want it created elsewhere and/or under a different name, use
+
+`python3 scrivx2pltr.py YourProject.scriv -o YourChoice.pltr`
+
+### Options
+`--flattenTimeline` By default, each folder in your Scrivener project's Draft folder will create a separate plotline in Plottr. If you'd rather have all your scenes in one flat timeline, use this option.
+
+`--foldersAsScenes` Folders themselves will be skipped by default. However, folders in Scrivener can actually have content, much like a file. Use this option if you want your folders to show up as scene cards in Plottr, too.
+
+With `--charactersFolder` and `--placesFolder`, you can specify the names of the Characters and Places folders, respectively, if you changed their names in Scrivener.
+
+`--maxCharacters` and `--maxPlaces` let you limit the number of Characters and Places, respectively, that will be read from Scrivener. Set them to `0` if you don't want them to be transferred at all.
+
+Use case for the last two options: I usually have a separate file for each main character but also files that collect minor characters in one file, or files that outline relations between characters. Those don't translate to Plottr's character description, so I can tell the script to just copy over the first *n* entries. 
 
 ## Caveats and Side Effects
 
