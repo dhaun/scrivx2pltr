@@ -51,7 +51,7 @@ def write_plottrfile(filename, booktitle, cards, beats, characters, places):
 
     global images, lines, lineId_max
 
-    plottr_version = '2021.2.19'
+    plottr_version = '2021.2.24'
 
     # mostly just the default values, taken from an "empty" Plottr file
     file = { 'fileName': filename, 'loaded': True, 'dirty': False, 'version': plottr_version }
