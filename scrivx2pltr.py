@@ -378,6 +378,23 @@ def parse_binderitem(item):
                 lineId_max = lineId
             lineId = lineId_last
 
+def remove_unusedLineOne():
+
+    global defaultColors
+    global cards, lines
+
+    # remove unused first line, move all others up
+    lines.pop(0)
+    for l in lines:
+        l['id'] = l['id'] - 1
+        l['position'] = l['position'] - 1
+        l['color'] = defaultColors[(l['id'] - 1) % 6]
+
+    # fix lineId in cards
+    for c in cards:
+        c['lineId'] = c['lineId'] - 1
+        
+
 ### ###########################################################################
 
 
@@ -416,6 +433,16 @@ for item in binder.findall('.//BinderItem'):
 
 for item in manuscript.find('Children'):
     parse_binderitem(item)
+
+# if each folder gets its own plotline, check if line 1 has any cards on it
+if not args.flattenTimeline:
+    lineOneUsed = False
+    for card in cards:
+        if card['lineId'] == 1:
+            lineOneUsed = True
+            break
+    if not lineOneUsed:
+        remove_unusedLineOne()
 
 booktitle = read_booktitle(args.scrivfile)
 characters = read_characters(args.scrivfile, binder)
