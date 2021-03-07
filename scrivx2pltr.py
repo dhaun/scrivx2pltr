@@ -28,8 +28,8 @@ class PlottrContent:
 
     def addCard(self, lineId, beatId, positionWithinLine, positionInBeat, title, description):
 
-        text = { 'text': description }
-        description = { 'type': 'paragraph', 'children': text }
+        text = [ { 'text': description } ]
+        description = [ { 'type': 'paragraph', 'children': text } ]
 
         card = { 'id': self.cardId, 'lineId': lineId, 'beatId': beatId, 'bookId': None, 'positionWithinLine': positionWithinLine, 'positionInBeat': positionInBeat, 'title': title, 'description': description, 'tags': [], 'characters': [], 'places': [], 'templates': [], 'imageId': None, 'fromTemplateId': None }
 
