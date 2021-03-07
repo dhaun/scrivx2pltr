@@ -10,9 +10,63 @@ import os.path
 import sys
 import xml.etree.ElementTree as ET
 
-# global variables
-images = {}
-num_images = 0
+### ###########################################################################
+# eventually, all code handling Plottr internals should move into this class
+
+class PlottrContent:
+    """ Simple class to hold the content that goes into the Plottr file """
+
+    #const plottr_version = '2021.2.24'
+    #const defaultColors = [ '#6cace4', '#78be20', '#e5554f', '#ff7f32', '#ffc72c', '#0b1117' ]
+
+    def __init__(self):
+        self.images = {}
+        self.num_images = 0
+
+
+    def addImageFromFile(file):
+        """ Reads an image from a file into the proper Plottr structure.
+        Returns the (internal) ID of the new image or 0 if not found. """
+
+        imgid = 0
+
+        if os.path.isfile(file):
+            with open(file, 'rb') as fs:
+                imgdata = fs.read() 
+
+            ibdata = base64.b64encode(imgdata)
+            ibstring = ibdata.decode('utf-8')
+
+            filename = os.path.basename(file)
+            x = filename.split('.')
+            ext = x[-1]
+
+            if ext == 'jpg' or ext == 'jpeg':
+                imgtype = 'jpeg'
+            elif ext == 'png':
+                imgtype = 'png'
+            elif ext == 'gif':
+                imgtype = 'gif'
+            else: # what other image types could there be?
+                imgtype = 'unknown'
+            data = 'data:image/' + imgtype + ';base64,' + ibstring
+            i = { 'id': self.num_images, 'name': filename, 'path': file, 'data': data }
+
+            self.num_images = self.num_images + 1
+            self.images[str(self.num_images)] = image
+            imgid = self.num_images
+
+        return imgid
+        
+    def getImages(self):
+        """ Returns a list of all images.
+        This should go away once the class can write Plottr files. """
+
+        return self.images
+
+### ###########################################################################
+
+plottr = PlottrContent()
 
 parser = argparse.ArgumentParser(description = 'Creating a Plottr file from a Scrivener file')
 parser.add_argument('scrivfile', help = 'Scrivener file to read')
@@ -49,7 +103,7 @@ else:
 
 def write_plottrfile(filename, booktitle, cards, beats, characters, places):
 
-    global images, lines, lineId_max
+    global plottr, lines, lineId_max
 
     plottr_version = '2021.2.24'
 
@@ -78,7 +132,7 @@ def write_plottrfile(filename, booktitle, cards, beats, characters, places):
     nstring = '"notes":' + json.dumps(notes) + ','
     pstring = '"places":' + json.dumps(places) + ','
     tstring = '"tags":' + json.dumps(tags) + ','
-    istring = '"images":' + json.dumps(images)
+    istring = '"images":' + json.dumps(plottr.getImages())
 
     with open(filename, 'w', encoding = 'utf-8') as fs:
         fs.write('{' + fstring + ustring + sstring + bstring + btstring + cdstring + cstring + chstring + custring + lstring + nstring + pstring + tstring + istring + '}')
@@ -116,7 +170,7 @@ def read_booktitle(scrivfile):
 
 def read_characters(scrivfile, binder):
 
-    global args
+    global args, plottr
 
     characters = []
 
@@ -159,7 +213,7 @@ def read_characters(scrivfile, binder):
                             if len(ext.text) > 0:
                                 imgname = 'card-image.' + ext.text
                                 img = os.path.join(content_path, imgname)
-                                i = read_image(img)
+                                i = plottr.addImageFromFile(img)
 
                                 if i > 0:
                                     ch['imageId'] = str(i)
@@ -184,7 +238,7 @@ def read_characters(scrivfile, binder):
 
 def read_places(scrivfile, binder):
 
-    global args
+    global args, plottr
 
     places = []
 
@@ -227,7 +281,7 @@ def read_places(scrivfile, binder):
                             if len(ext.text) > 0:
                                 imgname = 'card-image.' + ext.text
                                 img = os.path.join(content_path, imgname)
-                                i = read_image(img)
+                                i = plottr.addImageFromFile(img)
 
                                 if i > 0:
                                     pl['imageId'] = str(i)
@@ -249,41 +303,6 @@ def read_places(scrivfile, binder):
                     break
 
     return places
-
-# reads an image into the global(!) images list
-def read_image(file):
-
-    global images, num_images
-
-    imgid = 0
-
-    if os.path.isfile(file):
-        with open(file, 'rb') as fs:
-            imgdata = fs.read() 
-
-        ibdata = base64.b64encode(imgdata)
-        ibstring = ibdata.decode('utf-8')
-
-        filename = os.path.basename(file)
-        x = filename.split('.')
-        ext = x[-1]
-
-        if ext == 'jpg' or ext == 'jpeg':
-            imgtype = 'jpeg'
-        elif ext == 'png':
-            imgtype = 'png'
-        elif ext == 'gif':
-            imgtype = 'gif'
-        else: # what other image types could there be?
-            imgtype = 'unknown'
-        data = 'data:image/' + imgtype + ';base64,' + ibstring
-        i = { 'id': num_images, 'name': filename, 'path': file, 'data': data }
-
-        num_images = num_images + 1
-        images[str(num_images)] = i
-        imgid = num_images
-
-    return imgid
 
 def read_rtf(file):
 
