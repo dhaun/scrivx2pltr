@@ -16,8 +16,8 @@ import xml.etree.ElementTree as ET
 class PlottrContent:
     """ Simple class to hold the content that goes into the Plottr file """
 
-    #const plottr_version = '2021.2.24'
-    #const defaultColors = [ '#6cace4', '#78be20', '#e5554f', '#ff7f32', '#ffc72c', '#0b1117' ]
+    #plottr_version = '2021.2.24'
+    defaultColors = [ '#6cace4', '#78be20', '#e5554f', '#ff7f32', '#ffc72c', '#0b1117' ]
 
     def __init__(self):
         self.images = {}
@@ -63,6 +63,12 @@ class PlottrContent:
         This should go away once the class can write Plottr files. """
 
         return self.images
+
+
+    def getColor(self, color):
+        """ Return one of the 6 Plottr default colors. """
+
+        return self.defaultColors[color % 6]
 
 ### ###########################################################################
 
@@ -326,7 +332,7 @@ def format_text(text):
 def parse_binderitem(item):
 
     global args
-    global cards, beats, defaultColors
+    global cards, beats, plottr
     global lineId, lineId_max, position_for_line
     global cardId, beatId, bookId, position, positionWithinLine, positionInBeat
 
@@ -343,7 +349,7 @@ def parse_binderitem(item):
             position_for_line = position_for_line + 1
 
             # add plotline
-            col = defaultColors[(lineId - 1) % 6]
+            col = plottr.getColor(lineId - 1)
             lines.append({ 'id': lineId, 'bookId': 1, 'color': col, 'title': plotline_title, 'position': position_for_line, 'characterId': None, 'expanded': None, 'fromTemplateId': None })
 
     if item.attrib['Type'] == 'Text' or (item.attrib['Type'] == 'Folder' and args.foldersAsScenes):
@@ -399,7 +405,7 @@ def parse_binderitem(item):
 
 def remove_unusedLineOne():
 
-    global defaultColors
+    global plottr
     global cards, lines
 
     # remove unused first line, move all others up
@@ -407,7 +413,7 @@ def remove_unusedLineOne():
     for l in lines:
         l['id'] = l['id'] - 1
         l['position'] = l['position'] - 1
-        l['color'] = defaultColors[(l['id'] - 1) % 6]
+        l['color'] = plottr.getColor(l['id'] - 1)
 
     # fix lineId in cards
     for c in cards:
@@ -442,7 +448,6 @@ beats = []
 beats.append({ 'id': 1, 'bookId': 'series', 'position': 0, 'title': 'auto', 'time': 0, 'templates': [], 'autoOutlineSort': True, 'fromTemplateId' : None })
 beatId = 2 # first beat for us to use
 
-defaultColors = [ '#6cace4', '#78be20', '#e5554f', '#ff7f32', '#ffc72c', '#0b1117' ]
 
 # find the Manuscript folder, aka DraftFolder
 for item in binder.findall('.//BinderItem'):
