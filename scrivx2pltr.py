@@ -20,11 +20,50 @@ class PlottrContent:
     defaultColors = [ '#6cace4', '#78be20', '#e5554f', '#ff7f32', '#ffc72c', '#0b1117' ]
 
     def __init__(self):
+        self.cards = []
+        self.cardId = 1
         self.images = {}
         self.num_images = 0
 
 
-    def addImageFromFile(file):
+    def addCard(self, lineId, beatId, positionWithinLine, positionInBeat, title, description):
+
+        text = { 'text': description }
+        description = { 'type': 'paragraph', 'children': text }
+
+        card = { 'id': self.cardId, 'lineId': lineId, 'beatId': beatId, 'bookId': None, 'positionWithinLine': positionWithinLine, 'positionInBeat': positionInBeat, 'title': title, 'description': description, 'tags': [], 'characters': [], 'places': [], 'templates': [], 'imageId': None, 'fromTemplateId': None }
+
+        self.cards.append(card)
+        self.cardId = self.cardId + 1
+
+
+    def getCards(self):
+        """ Returns a list of all cards.
+        This should go away once the class can write Plottr files. """
+
+        return self.cards
+
+
+    def lineOneEmpty(self):
+        """ Check if we're actually using the first plotline. """
+
+        lineOneUsed = False
+        for card in self.cards:
+            if card['lineId'] == 1:
+                lineOneUsed = True
+                break
+
+        return not lineOneUsed
+
+
+    def fixLineIdInCards(self):
+        """ If the first plotline is not used, move all cards up one line. """
+
+        for card in self.cards:
+            card['lineId'] = card['lineId'] - 1
+
+
+    def addImageFromFile(self, file):
         """ Reads an image from a file into the proper Plottr structure.
         Returns the (internal) ID of the new image or 0 if not found. """
 
@@ -50,7 +89,7 @@ class PlottrContent:
             else: # what other image types could there be?
                 imgtype = 'unknown'
             data = 'data:image/' + imgtype + ';base64,' + ibstring
-            i = { 'id': self.num_images, 'name': filename, 'path': file, 'data': data }
+            image = { 'id': self.num_images, 'name': filename, 'path': file, 'data': data }
 
             self.num_images = self.num_images + 1
             self.images[str(self.num_images)] = image
@@ -107,9 +146,9 @@ else:
 
 ### ###########################################################################
 
-def write_plottrfile(filename, booktitle, cards, beats, characters, places):
+def write_plottrfile(plottr, filename, booktitle, beats, characters, places):
 
-    global plottr, lines, lineId_max
+    global lines, lineId_max
 
     plottr_version = '2021.2.24'
 
@@ -130,7 +169,7 @@ def write_plottrfile(filename, booktitle, cards, beats, characters, places):
     sstring = '"series":' + json.dumps(series) + ','
     bstring = '"books":' + json.dumps(books) + ','
     btstring = '"beats":' + json.dumps(beats) + ','
-    cdstring = '"cards":' + json.dumps(cards) + ','
+    cdstring = '"cards":' + json.dumps(plottr.getCards()) + ','
     cstring = '"categories":' + json.dumps(categories) + ','
     chstring = '"characters":' + json.dumps(characters) + ','
     custring = '"customAttributes":' + json.dumps(customAttributes) + ','
@@ -332,7 +371,7 @@ def format_text(text):
 def parse_binderitem(item):
 
     global args
-    global cards, beats, plottr
+    global beats, plottr
     global lineId, lineId_max, position_for_line
     global cardId, beatId, position, positionWithinLine, positionInBeat
 
@@ -363,30 +402,7 @@ def parse_binderitem(item):
 
         s = read_synopsis(args.scrivfile, item.attrib['UUID'])
 
-        card = {}
-        card['id'] = cardId
-        card['lineId'] = lineId
-        card['beatId'] = beatId
-        card['bookId'] = None
-        card['positionWithinLine'] = positionWithinLine
-        card['positionInBeat'] = positionInBeat
-        card['title'] = title
-        desc = {}
-        desc['type'] = 'paragraph'
-        txt = {}
-        txt['text'] = s
-        desc['children'] = [ txt ]
-        card['description'] = [ desc ]
-        card['tags'] = []
-        card['characters'] = []
-        card['places'] = []
-        card['templates'] = []
-        card['imageId'] = None
-        card['fromTemplateId'] = None
-
-        cards.append(card)
-        cardId = cardId + 1
-
+        plottr.addCard(lineId, beatId, positionWithinLine, positionInBeat, title, s)
         # update beats
         beats.append({ 'id': beatId, 'bookId': 1, 'position': position, 'title': 'auto', 'time': 0, 'templates': [], 'autoOutlineSort': True, 'fromTemplateId' : None })
 
@@ -406,7 +422,7 @@ def parse_binderitem(item):
 def remove_unusedLineOne():
 
     global plottr
-    global cards, lines
+    global lines
 
     # remove unused first line, move all others up
     lines.pop(0)
@@ -415,10 +431,7 @@ def remove_unusedLineOne():
         l['position'] = l['position'] - 1
         l['color'] = plottr.getColor(l['id'] - 1)
 
-    # fix lineId in cards
-    for c in cards:
-        c['lineId'] = c['lineId'] - 1
-        
+    plottr.fixLineIdInCards()
 
 ### ###########################################################################
 
@@ -429,8 +442,6 @@ with open(scrivxfile, 'r', encoding = 'utf-8') as fs:
 binder = ET.fromstring(sx)
 
 # initialize Plottr data
-cards = []
-cardId = 1
 position = 0
 positionWithinLine = 0
 positionInBeat = 0
@@ -459,16 +470,11 @@ for item in manuscript.find('Children'):
 
 # if each folder gets its own plotline, check if line 1 has any cards on it
 if not args.flattenTimeline:
-    lineOneUsed = False
-    for card in cards:
-        if card['lineId'] == 1:
-            lineOneUsed = True
-            break
-    if not lineOneUsed:
+    if plottr.lineOneEmpty():
         remove_unusedLineOne()
 
 booktitle = read_booktitle(args.scrivfile)
 characters = read_characters(args.scrivfile, binder)
 places = read_places(args.scrivfile, binder)
-write_plottrfile(plottrfile, booktitle, cards, beats, characters, places)
+write_plottrfile(plottr, plottrfile, booktitle, beats, characters, places)
 
