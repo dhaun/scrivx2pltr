@@ -334,7 +334,7 @@ def parse_binderitem(item):
     global args
     global cards, beats, plottr
     global lineId, lineId_max, position_for_line
-    global cardId, beatId, bookId, position, positionWithinLine, positionInBeat
+    global cardId, beatId, position, positionWithinLine, positionInBeat
 
     if not args.flattenTimeline:
         if item.find('Children') is not None:
@@ -367,7 +367,7 @@ def parse_binderitem(item):
         card['id'] = cardId
         card['lineId'] = lineId
         card['beatId'] = beatId
-        card['bookId'] = bookId
+        card['bookId'] = None
         card['positionWithinLine'] = positionWithinLine
         card['positionInBeat'] = positionInBeat
         card['title'] = title
@@ -432,7 +432,6 @@ binder = ET.fromstring(sx)
 cards = []
 cardId = 1
 position = 0
-bookId = None
 positionWithinLine = 0
 positionInBeat = 0
 
