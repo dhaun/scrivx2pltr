@@ -23,6 +23,7 @@ class PlottrContent:
         self.cards = []
         self.cardId = 1
         self.positionWithinLine = 0
+        self.positionInBeat = 0
 
         self.beats = []
         # beatId 1 seems to have a special meaning
@@ -34,12 +35,12 @@ class PlottrContent:
         self.num_images = 0
 
 
-    def addCard(self, lineId, positionInBeat, title, description):
+    def addCard(self, lineId, title, description):
 
         text = [ { 'text': description } ]
         description = [ { 'type': 'paragraph', 'children': text } ]
 
-        card = { 'id': self.cardId, 'lineId': lineId, 'beatId': self.beatId, 'bookId': None, 'positionWithinLine': self.positionWithinLine, 'positionInBeat': positionInBeat, 'title': title, 'description': description, 'tags': [], 'characters': [], 'places': [], 'templates': [], 'imageId': None, 'fromTemplateId': None }
+        card = { 'id': self.cardId, 'lineId': lineId, 'beatId': self.beatId, 'bookId': None, 'positionWithinLine': self.positionWithinLine, 'positionInBeat': self.positionInBeat, 'title': title, 'description': description, 'tags': [], 'characters': [], 'places': [], 'templates': [], 'imageId': None, 'fromTemplateId': None }
 
         self.cards.append(card)
         self.cardId = self.cardId + 1
@@ -394,7 +395,7 @@ def parse_binderitem(item):
     global args
     global beats, plottr
     global lineId, lineId_max, position_for_line
-    global cardId, positionInBeat
+    global cardId
 
     if not args.flattenTimeline:
         if item.find('Children') is not None:
@@ -423,7 +424,7 @@ def parse_binderitem(item):
 
         s = read_synopsis(args.scrivfile, item.attrib['UUID'])
 
-        plottr.addCard(lineId, positionInBeat, title, s)
+        plottr.addCard(lineId, title, s)
         # update beats
         plottr.addBeat()
 
@@ -460,8 +461,6 @@ with open(scrivxfile, 'r', encoding = 'utf-8') as fs:
 binder = ET.fromstring(sx)
 
 # initialize Plottr data
-positionInBeat = 0
-
 lines = []
 # default plotline
 lines.append({ 'id': 1, 'bookId': 1, 'color': '#6cace4', 'title': 'Main Plot', 'position': 0, 'characterId': None, 'expanded': None, 'fromTemplateId': None })
