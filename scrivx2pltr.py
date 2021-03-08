@@ -22,6 +22,7 @@ class PlottrContent:
     def __init__(self):
         self.cards = []
         self.cardId = 1
+        self.positionWithinLine = 0
 
         self.beats = []
         # beatId 1 seems to have a special meaning
@@ -33,12 +34,12 @@ class PlottrContent:
         self.num_images = 0
 
 
-    def addCard(self, lineId, positionWithinLine, positionInBeat, title, description):
+    def addCard(self, lineId, positionInBeat, title, description):
 
         text = [ { 'text': description } ]
         description = [ { 'type': 'paragraph', 'children': text } ]
 
-        card = { 'id': self.cardId, 'lineId': lineId, 'beatId': self.beatId, 'bookId': None, 'positionWithinLine': positionWithinLine, 'positionInBeat': positionInBeat, 'title': title, 'description': description, 'tags': [], 'characters': [], 'places': [], 'templates': [], 'imageId': None, 'fromTemplateId': None }
+        card = { 'id': self.cardId, 'lineId': lineId, 'beatId': self.beatId, 'bookId': None, 'positionWithinLine': self.positionWithinLine, 'positionInBeat': positionInBeat, 'title': title, 'description': description, 'tags': [], 'characters': [], 'places': [], 'templates': [], 'imageId': None, 'fromTemplateId': None }
 
         self.cards.append(card)
         self.cardId = self.cardId + 1
@@ -393,7 +394,7 @@ def parse_binderitem(item):
     global args
     global beats, plottr
     global lineId, lineId_max, position_for_line
-    global cardId, positionWithinLine, positionInBeat
+    global cardId, positionInBeat
 
     if not args.flattenTimeline:
         if item.find('Children') is not None:
@@ -422,7 +423,7 @@ def parse_binderitem(item):
 
         s = read_synopsis(args.scrivfile, item.attrib['UUID'])
 
-        plottr.addCard(lineId, positionWithinLine, positionInBeat, title, s)
+        plottr.addCard(lineId, positionInBeat, title, s)
         # update beats
         plottr.addBeat()
 
@@ -459,7 +460,6 @@ with open(scrivxfile, 'r', encoding = 'utf-8') as fs:
 binder = ET.fromstring(sx)
 
 # initialize Plottr data
-positionWithinLine = 0
 positionInBeat = 0
 
 lines = []
