@@ -22,16 +22,23 @@ class PlottrContent:
     def __init__(self):
         self.cards = []
         self.cardId = 1
+
+        self.beats = []
+        # beatId 1 seems to have a special meaning
+        self.beats.append({ 'id': 1, 'bookId': 'series', 'position': 0, 'title': 'auto', 'time': 0, 'templates': [], 'autoOutlineSort': True, 'fromTemplateId' : None })
+        self.beatId = 2 # first beat for us to use
+        self.positionOfBeat = 0
+
         self.images = {}
         self.num_images = 0
 
 
-    def addCard(self, lineId, beatId, positionWithinLine, positionInBeat, title, description):
+    def addCard(self, lineId, positionWithinLine, positionInBeat, title, description):
 
         text = [ { 'text': description } ]
         description = [ { 'type': 'paragraph', 'children': text } ]
 
-        card = { 'id': self.cardId, 'lineId': lineId, 'beatId': beatId, 'bookId': None, 'positionWithinLine': positionWithinLine, 'positionInBeat': positionInBeat, 'title': title, 'description': description, 'tags': [], 'characters': [], 'places': [], 'templates': [], 'imageId': None, 'fromTemplateId': None }
+        card = { 'id': self.cardId, 'lineId': lineId, 'beatId': self.beatId, 'bookId': None, 'positionWithinLine': positionWithinLine, 'positionInBeat': positionInBeat, 'title': title, 'description': description, 'tags': [], 'characters': [], 'places': [], 'templates': [], 'imageId': None, 'fromTemplateId': None }
 
         self.cards.append(card)
         self.cardId = self.cardId + 1
@@ -61,6 +68,19 @@ class PlottrContent:
 
         for card in self.cards:
             card['lineId'] = card['lineId'] - 1
+
+
+    def addBeat(self):
+        self.beats.append({ 'id': self.beatId, 'bookId': 1, 'position': self.positionOfBeat, 'title': 'auto', 'time': 0, 'templates': [], 'autoOutlineSort': True, 'fromTemplateId' : None })
+
+        self.beatId = self.beatId + 1
+        self.positionOfBeat = self.positionOfBeat + 1
+
+    def getBeats(self):
+        """ Returns a list of all beats.
+        This should go away once the class can write Plottr files. """
+
+        return self.beats
 
 
     def addImageFromFile(self, file):
@@ -146,7 +166,7 @@ else:
 
 ### ###########################################################################
 
-def write_plottrfile(plottr, filename, booktitle, beats, characters, places):
+def write_plottrfile(plottr, filename, booktitle, characters, places):
 
     global lines, lineId_max
 
@@ -168,7 +188,7 @@ def write_plottrfile(plottr, filename, booktitle, beats, characters, places):
     ustring = '"ui":' + json.dumps(ui) + ','
     sstring = '"series":' + json.dumps(series) + ','
     bstring = '"books":' + json.dumps(books) + ','
-    btstring = '"beats":' + json.dumps(beats) + ','
+    btstring = '"beats":' + json.dumps(plottr.getBeats()) + ','
     cdstring = '"cards":' + json.dumps(plottr.getCards()) + ','
     cstring = '"categories":' + json.dumps(categories) + ','
     chstring = '"characters":' + json.dumps(characters) + ','
@@ -373,7 +393,7 @@ def parse_binderitem(item):
     global args
     global beats, plottr
     global lineId, lineId_max, position_for_line
-    global cardId, beatId, position, positionWithinLine, positionInBeat
+    global cardId, positionWithinLine, positionInBeat
 
     if not args.flattenTimeline:
         if item.find('Children') is not None:
@@ -402,12 +422,9 @@ def parse_binderitem(item):
 
         s = read_synopsis(args.scrivfile, item.attrib['UUID'])
 
-        plottr.addCard(lineId, beatId, positionWithinLine, positionInBeat, title, s)
+        plottr.addCard(lineId, positionWithinLine, positionInBeat, title, s)
         # update beats
-        beats.append({ 'id': beatId, 'bookId': 1, 'position': position, 'title': 'auto', 'time': 0, 'templates': [], 'autoOutlineSort': True, 'fromTemplateId' : None })
-
-        beatId = beatId + 1
-        position = position + 1
+        plottr.addBeat()
 
     # recurse for any child items / subfolders
     if item.find('Children') is not None:
@@ -442,7 +459,6 @@ with open(scrivxfile, 'r', encoding = 'utf-8') as fs:
 binder = ET.fromstring(sx)
 
 # initialize Plottr data
-position = 0
 positionWithinLine = 0
 positionInBeat = 0
 
@@ -452,11 +468,6 @@ lines.append({ 'id': 1, 'bookId': 1, 'color': '#6cace4', 'title': 'Main Plot', '
 lineId = 1
 lineId_max = 1
 position_for_line = 0
-
-beats = []
-# beatId 1 seems to have a special meaning
-beats.append({ 'id': 1, 'bookId': 'series', 'position': 0, 'title': 'auto', 'time': 0, 'templates': [], 'autoOutlineSort': True, 'fromTemplateId' : None })
-beatId = 2 # first beat for us to use
 
 
 # find the Manuscript folder, aka DraftFolder
@@ -476,5 +487,5 @@ if not args.flattenTimeline:
 booktitle = read_booktitle(args.scrivfile)
 characters = read_characters(args.scrivfile, binder)
 places = read_places(args.scrivfile, binder)
-write_plottrfile(plottr, plottrfile, booktitle, beats, characters, places)
+write_plottrfile(plottr, plottrfile, booktitle, characters, places)
 
