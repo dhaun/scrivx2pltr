@@ -37,6 +37,9 @@ class PlottrContent:
         self.characters = []
         self.characterId = 1
 
+        self.places = []
+        self.placeId = 1
+
 
     def addCard(self, lineId, title, description):
 
@@ -156,6 +159,27 @@ class PlottrContent:
         return self.characters
 
 
+    def addPlace(self, name, description, imagefile):
+
+        imageId = self.addImageFromFile(imagefile)
+        if imageId > 0:
+            image = str(imageId)
+        else:
+            image = ''
+
+        pl = { 'id': self.placeId, 'name': name, 'description': description, 'notes': [], 'color': None, 'cards': [], 'noteIds': [], 'templates': [], 'tags': [], 'imageId': image, 'bookIds': [1] }
+
+        self.places.append(pl)
+        self.placeId = self.placeId + 1
+        
+
+    def getPlaces(self):
+        """ Returns a list of all places.
+        This should go away once the class can write Plottr files. """
+
+        return self.places
+
+
 ### ###########################################################################
 
 plottr = PlottrContent()
@@ -193,7 +217,7 @@ else:
 
 ### ###########################################################################
 
-def write_plottrfile(plottr, filename, booktitle, places):
+def write_plottrfile(plottr, filename, booktitle):
 
     global lines, lineId_max
 
@@ -222,7 +246,7 @@ def write_plottrfile(plottr, filename, booktitle, places):
     custring = '"customAttributes":' + json.dumps(customAttributes) + ','
     lstring = '"lines":' + json.dumps(lines) + ','
     nstring = '"notes":' + json.dumps(notes) + ','
-    pstring = '"places":' + json.dumps(places) + ','
+    pstring = '"places":' + json.dumps(plottr.getPlaces()) + ','
     tstring = '"tags":' + json.dumps(tags) + ','
     istring = '"images":' + json.dumps(plottr.getImages())
 
@@ -326,11 +350,9 @@ def read_places(scrivfile, binder):
 
     global args, plottr
 
-    places = []
-
     if args.maxPlaces == 0:
         # we were asked not to read Places
-        return places
+        return
 
     foldername = 'Places'
     if len(args.placesFolder) > 0:
@@ -348,47 +370,43 @@ def read_places(scrivfile, binder):
                 break
 
     if found:
-        plId = 1
         files_data = os.path.join(scrivfile, 'Files', 'Data')
 
+        places_read = 0
         for place in item.findall('.//BinderItem'):
-            pl = { 'id': 1, 'name': '', 'description': '', 'notes': [], 'color': None, 'cards': [], 'noteIds': [], 'templates': [], 'tags': [], 'imageId': '', 'bookIds': [1] }
 
+            place_name = ''
+            place_desc = ''
+            place_image = ''
             if place.attrib['Type'] == 'Text':
                 uuid = place.attrib['UUID']
                 content_path = os.path.join(files_data, uuid)
                 for child in place:
                     if child.tag == 'Title':
-                        pl['id'] = plId
-                        pl['name'] = child.text
+                        place_name = child.text
                     elif child.tag == 'MetaData':
                         ext = child.find('.//IndexCardImageFileExtension')
                         if ext is not None:
                             if len(ext.text) > 0:
                                 imgname = 'card-image.' + ext.text
-                                img = os.path.join(content_path, imgname)
-                                i = plottr.addImageFromFile(img)
-
-                                if i > 0:
-                                    pl['imageId'] = str(i)
+                                place_image = os.path.join(content_path, imgname)
 
                 s = read_synopsis(scrivfile, uuid)
                 if len(s) > 0:
-                    pl['description'] = s
+                    place_desc = s
 
                 # tbd: need to find a good solution to read RTF
                 # n = read_rtf(os.path.join(content_path, 'content.rtf'))
                 # if len(n) > 0:
                 #     pl['notes'] = format_text(n)
 
-                places.append(pl)
-                plId = plId + 1
+                plottr.addPlace(place_name, place_desc, place_image)
+                places_read = places_read + 1
 
-                if args.maxPlaces > 0 and plId > args.maxPlaces:
+                if args.maxPlaces > 0 and places_read == args.maxPlaces:
                     # reached max. number of Places to read
                     break
 
-    return places
 
 def read_rtf(file):
 
@@ -505,5 +523,5 @@ if not args.flattenTimeline:
 booktitle = read_booktitle(args.scrivfile)
 read_characters(args.scrivfile, binder)
 places = read_places(args.scrivfile, binder)
-write_plottrfile(plottr, plottrfile, booktitle, places)
+write_plottrfile(plottr, plottrfile, booktitle)
 
