@@ -336,7 +336,7 @@ def read_characters(scrivfile, binder):
                 # tbd: need to find a good solution to read RTF
                 # n = read_rtf(os.path.join(content_path, 'content.rtf'))
                 # if len(n) > 0:
-                #     ch['notes'] = format_text(n)
+                #     character_notes = format_text(n)
 
                 plottr.addCharacter(character_name, character_desc, character_image)
                 characters_read = characters_read + 1
@@ -398,7 +398,7 @@ def read_places(scrivfile, binder):
                 # tbd: need to find a good solution to read RTF
                 # n = read_rtf(os.path.join(content_path, 'content.rtf'))
                 # if len(n) > 0:
-                #     pl['notes'] = format_text(n)
+                #     place_notes = format_text(n)
 
                 plottr.addPlace(place_name, place_desc, place_image)
                 places_read = places_read + 1
@@ -522,6 +522,6 @@ if not args.flattenTimeline:
 
 booktitle = read_booktitle(args.scrivfile)
 read_characters(args.scrivfile, binder)
-places = read_places(args.scrivfile, binder)
+read_places(args.scrivfile, binder)
 write_plottrfile(plottr, plottrfile, booktitle)
 
