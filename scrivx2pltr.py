@@ -34,6 +34,9 @@ class PlottrContent:
         self.images = {}
         self.num_images = 0
 
+        self.characters = []
+        self.characterId = 1
+
 
     def addCard(self, lineId, title, description):
 
@@ -131,6 +134,28 @@ class PlottrContent:
 
         return self.defaultColors[color % 6]
 
+
+    def addCharacter(self, name, description, imagefile):
+
+        imageId = self.addImageFromFile(imagefile)
+        if imageId > 0:
+            image = str(imageId)
+        else:
+            image = ''
+
+        ch = { 'id': self.characterId, 'name': name, 'description': description, 'notes': [], 'color': None, 'cards': [], 'noteIds': [], 'templates': [], 'tags': [], 'categoryId': '1', 'imageId': image, 'bookIds': [1] }
+
+        self.characters.append(ch)
+        self.characterId = self.characterId + 1
+        
+
+    def getCharacters(self):
+        """ Returns a list of all characters.
+        This should go away once the class can write Plottr files. """
+
+        return self.characters
+
+
 ### ###########################################################################
 
 plottr = PlottrContent()
@@ -168,7 +193,7 @@ else:
 
 ### ###########################################################################
 
-def write_plottrfile(plottr, filename, booktitle, characters, places):
+def write_plottrfile(plottr, filename, booktitle, places):
 
     global lines, lineId_max
 
@@ -193,7 +218,7 @@ def write_plottrfile(plottr, filename, booktitle, characters, places):
     btstring = '"beats":' + json.dumps(plottr.getBeats()) + ','
     cdstring = '"cards":' + json.dumps(plottr.getCards()) + ','
     cstring = '"categories":' + json.dumps(categories) + ','
-    chstring = '"characters":' + json.dumps(characters) + ','
+    chstring = '"characters":' + json.dumps(plottr.getCharacters()) + ','
     custring = '"customAttributes":' + json.dumps(customAttributes) + ','
     lstring = '"lines":' + json.dumps(lines) + ','
     nstring = '"notes":' + json.dumps(notes) + ','
@@ -239,11 +264,9 @@ def read_characters(scrivfile, binder):
 
     global args, plottr
 
-    characters = []
-
     if args.maxCharacters == 0:
         # we were asked not to read Characters
-        return characters
+        return
 
     foldername = 'Characters'
     if len(args.charactersFolder) > 0:
@@ -261,47 +284,43 @@ def read_characters(scrivfile, binder):
                 break
 
     if found:
-        chId = 1
         files_data = os.path.join(scrivfile, 'Files', 'Data')
 
+        characters_read = 0
         for char in item.findall('.//BinderItem'):
-            ch = { 'id': 1, 'name': '', 'description': '', 'notes': [], 'color': None, 'cards': [], 'noteIds': [], 'templates': [], 'tags': [], 'categoryId': '1', 'imageId': '', 'bookIds': [1] }
 
+            character_name = ''
+            character_desc = ''
+            character_image = ''
             if char.attrib['Type'] == 'Text':
                 uuid = char.attrib['UUID']
                 content_path = os.path.join(files_data, uuid)
                 for child in char:
                     if child.tag == 'Title':
-                        ch['id'] = chId
-                        ch['name'] = child.text
+                        character_name = child.text
                     elif child.tag == 'MetaData':
                         ext = child.find('.//IndexCardImageFileExtension')
                         if ext is not None:
                             if len(ext.text) > 0:
                                 imgname = 'card-image.' + ext.text
-                                img = os.path.join(content_path, imgname)
-                                i = plottr.addImageFromFile(img)
-
-                                if i > 0:
-                                    ch['imageId'] = str(i)
+                                character_image = os.path.join(content_path, imgname)
 
                 s = read_synopsis(scrivfile, uuid)
                 if len(s) > 0:
-                    ch['description'] = s
+                    character_desc = s
 
                 # tbd: need to find a good solution to read RTF
                 # n = read_rtf(os.path.join(content_path, 'content.rtf'))
                 # if len(n) > 0:
                 #     ch['notes'] = format_text(n)
 
-                characters.append(ch)
-                chId = chId + 1
+                plottr.addCharacter(character_name, character_desc, character_image)
+                characters_read = characters_read + 1
 
-                if args.maxCharacters > 0 and chId > args.maxCharacters:
+                if args.maxCharacters > 0 and characters_read == args.maxCharacters:
                     # reached max. number of Characters to read
                     break
 
-    return characters
 
 def read_places(scrivfile, binder):
 
@@ -484,7 +503,7 @@ if not args.flattenTimeline:
         remove_unusedLineOne()
 
 booktitle = read_booktitle(args.scrivfile)
-characters = read_characters(args.scrivfile, binder)
+read_characters(args.scrivfile, binder)
 places = read_places(args.scrivfile, binder)
-write_plottrfile(plottr, plottrfile, booktitle, characters, places)
+write_plottrfile(plottr, plottrfile, booktitle, places)
 
