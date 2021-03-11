@@ -40,13 +40,20 @@ class PlottrContent:
         self.places = []
         self.placeId = 1
 
+        self.lines = []
+        # default plotline
+        self.lines.append({ 'id': 1, 'bookId': 1, 'color': '#6cace4', 'title': 'Main Plot', 'position': 0, 'characterId': None, 'expanded': None, 'fromTemplateId': None })
+        self.lineId = 1
+        self.lineId_max = 1
+        self.position_for_line = 0
 
-    def addCard(self, lineId, title, description):
+
+    def addCard(self, title, description):
 
         text = [ { 'text': description } ]
         description = [ { 'type': 'paragraph', 'children': text } ]
 
-        card = { 'id': self.cardId, 'lineId': lineId, 'beatId': self.beatId, 'bookId': None, 'positionWithinLine': self.positionWithinLine, 'positionInBeat': self.positionInBeat, 'title': title, 'description': description, 'tags': [], 'characters': [], 'places': [], 'templates': [], 'imageId': None, 'fromTemplateId': None }
+        card = { 'id': self.cardId, 'lineId': self.lineId, 'beatId': self.beatId, 'bookId': None, 'positionWithinLine': self.positionWithinLine, 'positionInBeat': self.positionInBeat, 'title': title, 'description': description, 'tags': [], 'characters': [], 'places': [], 'templates': [], 'imageId': None, 'fromTemplateId': None }
 
         self.cards.append(card)
         self.cardId = self.cardId + 1
@@ -57,25 +64,6 @@ class PlottrContent:
         This should go away once the class can write Plottr files. """
 
         return self.cards
-
-
-    def lineOneEmpty(self):
-        """ Check if we're actually using the first plotline. """
-
-        lineOneUsed = False
-        for card in self.cards:
-            if card['lineId'] == 1:
-                lineOneUsed = True
-                break
-
-        return not lineOneUsed
-
-
-    def fixLineIdInCards(self):
-        """ If the first plotline is not used, move all cards up one line. """
-
-        for card in self.cards:
-            card['lineId'] = card['lineId'] - 1
 
 
     def addBeat(self):
@@ -180,6 +168,63 @@ class PlottrContent:
         return self.places
 
 
+    def newPlotline(self, title):
+        """ Start a new plotline. """
+
+        self.lineId_last = self.lineId
+        self.lineId_max = self.lineId_max + 1
+        self.lineId = self.lineId_max
+        self.position_for_line = self.position_for_line + 1
+
+        col = self.getColor(self.lineId - 1)
+        self.lines.append({ 'id': self.lineId, 'bookId': 1, 'color': col, 'title': title, 'position': self.position_for_line, 'characterId': None, 'expanded': None, 'fromTemplateId': None })
+
+
+    def closePlotline(self):
+        """ Close current plotline and return to the previous one. """
+
+        if self.lineId > self.lineId_max:
+            self.lineId_max = self.lineId
+        self.lineId = self.lineId_last
+
+
+    def lineOneEmpty(self):
+        """ Check if we're actually using the first plotline. """
+
+        lineOneUsed = False
+        for card in self.cards:
+            if card['lineId'] == 1:
+                lineOneUsed = True
+                break
+
+        return not lineOneUsed
+
+
+    def finalisePlotlines(self, flatTimeline):
+
+        # required special plotline
+        self.lines.append({ 'id': self.lineId_max + 1, 'bookId': 'series', 'color': '#6cace4', 'title': 'Main Plot', 'position': 0, 'characterId': None, 'expanded': None, 'fromTemplateId': None })
+
+        if not flatTimeline:
+            # If the first plotline is not used, move all cards up one line.
+            if self.lineOneEmpty():
+                self.lines.pop(0)
+                for l in self.lines:
+                    l['id'] = l['id'] - 1
+                    l['position'] = l['position'] - 1
+                    l['color'] = self.getColor(l['id'] - 1)
+
+                for card in self.cards:
+                    card['lineId'] = card['lineId'] - 1
+
+
+    def getLines(self):
+        """ Returns a list of all lines.
+        This should go away once the class can write Plottr files. """
+
+        return self.lines
+
+
 ### ###########################################################################
 
 plottr = PlottrContent()
@@ -219,8 +264,6 @@ else:
 
 def write_plottrfile(plottr, filename, booktitle):
 
-    global lines, lineId_max
-
     plottr_version = '2021.2.24'
 
     # mostly just the default values, taken from an "empty" Plottr file
@@ -230,8 +273,6 @@ def write_plottrfile(plottr, filename, booktitle):
     books = { '1': { 'id': 1, 'title': booktitle, 'premise': '', 'genre': '', 'theme': '', 'templates': [], 'timelineTemplates': [], 'imageId': None }, 'allIds': [1] }
     categories = { 'characters': [ { 'id': 1, 'name': 'Main', 'position': 0 }, { 'id': 2, 'name': 'Supporting', 'position': 1 }, { 'id': 3, 'name': 'Other', 'position': 2 } ], 'places': [], 'notes': [], 'tags': [] }
     customAttributes = { 'characters': [], 'places': [], 'scenes': [], 'lines': [] }
-    # required special plotline
-    lines.append({ 'id': lineId_max + 1, 'bookId': 'series', 'color': '#6cace4', 'title': 'Main Plot', 'position': 0, 'characterId': None, 'expanded': None, 'fromTemplateId': None })
     notes = []
     tags = []
 
@@ -244,7 +285,7 @@ def write_plottrfile(plottr, filename, booktitle):
     cstring = '"categories":' + json.dumps(categories) + ','
     chstring = '"characters":' + json.dumps(plottr.getCharacters()) + ','
     custring = '"customAttributes":' + json.dumps(customAttributes) + ','
-    lstring = '"lines":' + json.dumps(lines) + ','
+    lstring = '"lines":' + json.dumps(plottr.getLines()) + ','
     nstring = '"notes":' + json.dumps(notes) + ','
     pstring = '"places":' + json.dumps(plottr.getPlaces()) + ','
     tstring = '"tags":' + json.dumps(tags) + ','
@@ -429,26 +470,18 @@ def format_text(text):
 
 def parse_binderitem(item):
 
-    global args
-    global beats, plottr
-    global lineId, lineId_max, position_for_line
-    global cardId
+    global args, plottr
 
     if not args.flattenTimeline:
         if item.find('Children') is not None:
-            lineId_last = lineId
-            lineId_max = lineId_max + 1
-            lineId = lineId_max
             child = item.find('Title')
             if child is None:
                 plotline_title = 'Side Plot'
             else:
                 plotline_title = child.text
-            position_for_line = position_for_line + 1
 
             # add plotline
-            col = plottr.getColor(lineId - 1)
-            lines.append({ 'id': lineId, 'bookId': 1, 'color': col, 'title': plotline_title, 'position': position_for_line, 'characterId': None, 'expanded': None, 'fromTemplateId': None })
+            plottr.newPlotline(plotline_title)
 
     if item.attrib['Type'] == 'Text' or (item.attrib['Type'] == 'Folder' and args.foldersAsScenes):
         # add this as a scene
@@ -461,7 +494,7 @@ def parse_binderitem(item):
 
         s = read_synopsis(args.scrivfile, item.attrib['UUID'])
 
-        plottr.addCard(lineId, title, s)
+        plottr.addCard(title, s)
         # update beats
         plottr.addBeat()
 
@@ -471,40 +504,14 @@ def parse_binderitem(item):
             parse_binderitem(child)
 
         if not args.flattenTimeline:
-            if lineId > lineId_max:
-                lineId_max = lineId
-            lineId = lineId_last
-
-def remove_unusedLineOne():
-
-    global plottr
-    global lines
-
-    # remove unused first line, move all others up
-    lines.pop(0)
-    for l in lines:
-        l['id'] = l['id'] - 1
-        l['position'] = l['position'] - 1
-        l['color'] = plottr.getColor(l['id'] - 1)
-
-    plottr.fixLineIdInCards()
+            plottr.closePlotline()
 
 ### ###########################################################################
-
 
 with open(scrivxfile, 'r', encoding = 'utf-8') as fs:
     sx = fs.read()
 
 binder = ET.fromstring(sx)
-
-# initialize Plottr data
-lines = []
-# default plotline
-lines.append({ 'id': 1, 'bookId': 1, 'color': '#6cace4', 'title': 'Main Plot', 'position': 0, 'characterId': None, 'expanded': None, 'fromTemplateId': None })
-lineId = 1
-lineId_max = 1
-position_for_line = 0
-
 
 # find the Manuscript folder, aka DraftFolder
 for item in binder.findall('.//BinderItem'):
@@ -515,13 +522,10 @@ for item in binder.findall('.//BinderItem'):
 for item in manuscript.find('Children'):
     parse_binderitem(item)
 
-# if each folder gets its own plotline, check if line 1 has any cards on it
-if not args.flattenTimeline:
-    if plottr.lineOneEmpty():
-        remove_unusedLineOne()
-
 booktitle = read_booktitle(args.scrivfile)
 read_characters(args.scrivfile, binder)
 read_places(args.scrivfile, binder)
+
+plottr.finalisePlotlines(args.flattenTimeline)
 write_plottrfile(plottr, plottrfile, booktitle)
 
