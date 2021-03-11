@@ -16,7 +16,7 @@ import xml.etree.ElementTree as ET
 class PlottrContent:
     """ Simple class to hold the content that goes into the Plottr file """
 
-    #plottr_version = '2021.2.24'
+    plottr_version = '2021.2.24'
     defaultColors = [ '#6cace4', '#78be20', '#e5554f', '#ff7f32', '#ffc72c', '#0b1117' ]
 
     def __init__(self):
@@ -47,6 +47,12 @@ class PlottrContent:
         self.lineId_max = 1
         self.position_for_line = 0
 
+        self.booktitle = ''
+
+
+    def setBookTitle(self, title):
+        self.booktitle = title
+
 
     def addCard(self, title, description):
 
@@ -59,25 +65,11 @@ class PlottrContent:
         self.cardId = self.cardId + 1
 
 
-    def getCards(self):
-        """ Returns a list of all cards.
-        This should go away once the class can write Plottr files. """
-
-        return self.cards
-
-
     def addBeat(self):
         self.beats.append({ 'id': self.beatId, 'bookId': 1, 'position': self.positionOfBeat, 'title': 'auto', 'time': 0, 'templates': [], 'autoOutlineSort': True, 'fromTemplateId' : None })
 
         self.beatId = self.beatId + 1
         self.positionOfBeat = self.positionOfBeat + 1
-
-    def getBeats(self):
-        """ Returns a list of all beats.
-        This should go away once the class can write Plottr files. """
-
-        return self.beats
-
 
     def addImageFromFile(self, file):
         """ Reads an image from a file into the proper Plottr structure.
@@ -113,13 +105,6 @@ class PlottrContent:
 
         return imgid
         
-    def getImages(self):
-        """ Returns a list of all images.
-        This should go away once the class can write Plottr files. """
-
-        return self.images
-
-
     def getColor(self, color):
         """ Return one of the 6 Plottr default colors. """
 
@@ -138,13 +123,6 @@ class PlottrContent:
 
         self.characters.append(ch)
         self.characterId = self.characterId + 1
-        
-
-    def getCharacters(self):
-        """ Returns a list of all characters.
-        This should go away once the class can write Plottr files. """
-
-        return self.characters
 
 
     def addPlace(self, name, description, imagefile):
@@ -159,13 +137,6 @@ class PlottrContent:
 
         self.places.append(pl)
         self.placeId = self.placeId + 1
-        
-
-    def getPlaces(self):
-        """ Returns a list of all places.
-        This should go away once the class can write Plottr files. """
-
-        return self.places
 
 
     def newPlotline(self, title):
@@ -218,11 +189,35 @@ class PlottrContent:
                     card['lineId'] = card['lineId'] - 1
 
 
-    def getLines(self):
-        """ Returns a list of all lines.
-        This should go away once the class can write Plottr files. """
+    def write(self, filename):
 
-        return self.lines
+        # mostly just the default values, taken from an "empty" Plottr file
+        file = { 'fileName': filename, 'loaded': True, 'dirty': False, 'version': self.plottr_version }
+        ui = { 'currentView': 'timeline', 'currentTimeline': 1, 'timelineIsExpanded': True, 'orientation': 'horizontal', 'darkMode': False, 'characterSort': 'name~asc', 'characterFilter': None, 'placeSort': 'name-asc', 'placeFilter': None, 'noteSort': 'title-asc', 'noteFilter': None, 'timelineFilter': None, 'timelineScrollPosition': { 'x': 0, 'y': 0 }, 'timeline': { 'size': 'large' } }
+        series = { 'name': self.booktitle, 'premise': '', 'genre': '', 'theme': '', 'templates': [] }
+        books = { '1': { 'id': 1, 'title': self.booktitle, 'premise': '', 'genre': '', 'theme': '', 'templates': [], 'timelineTemplates': [], 'imageId': None }, 'allIds': [1] }
+        categories = { 'characters': [ { 'id': 1, 'name': 'Main', 'position': 0 }, { 'id': 2, 'name': 'Supporting', 'position': 1 }, { 'id': 3, 'name': 'Other', 'position': 2 } ], 'places': [], 'notes': [], 'tags': [] }
+        customAttributes = { 'characters': [], 'places': [], 'scenes': [], 'lines': [] }
+        notes = []
+        tags = []
+
+        fstring = '"file":' + json.dumps(file) + ','
+        ustring = '"ui":' + json.dumps(ui) + ','
+        sstring = '"series":' + json.dumps(series) + ','
+        bstring = '"books":' + json.dumps(books) + ','
+        btstring = '"beats":' + json.dumps(self.beats) + ','
+        cdstring = '"cards":' + json.dumps(self.cards) + ','
+        cstring = '"categories":' + json.dumps(categories) + ','
+        chstring = '"characters":' + json.dumps(self.characters) + ','
+        custring = '"customAttributes":' + json.dumps(customAttributes) + ','
+        lstring = '"lines":' + json.dumps(self.lines) + ','
+        nstring = '"notes":' + json.dumps(notes) + ','
+        pstring = '"places":' + json.dumps(self.places) + ','
+        tstring = '"tags":' + json.dumps(tags) + ','
+        istring = '"images":' + json.dumps(self.images)
+
+        with open(filename, 'w', encoding = 'utf-8') as fs:
+            fs.write('{' + fstring + ustring + sstring + bstring + btstring + cdstring + cstring + chstring + custring + lstring + nstring + pstring + tstring + istring + '}')
 
 
 ### ###########################################################################
@@ -261,38 +256,6 @@ else:
 
 
 ### ###########################################################################
-
-def write_plottrfile(plottr, filename, booktitle):
-
-    plottr_version = '2021.2.24'
-
-    # mostly just the default values, taken from an "empty" Plottr file
-    file = { 'fileName': filename, 'loaded': True, 'dirty': False, 'version': plottr_version }
-    ui = { 'currentView': 'timeline', 'currentTimeline': 1, 'timelineIsExpanded': True, 'orientation': 'horizontal', 'darkMode': False, 'characterSort': 'name~asc', 'characterFilter': None, 'placeSort': 'name-asc', 'placeFilter': None, 'noteSort': 'title-asc', 'noteFilter': None, 'timelineFilter': None, 'timelineScrollPosition': { 'x': 0, 'y': 0 }, 'timeline': { 'size': 'large' } }
-    series = { 'name': booktitle, 'premise': '', 'genre': '', 'theme': '', 'templates': [] }
-    books = { '1': { 'id': 1, 'title': booktitle, 'premise': '', 'genre': '', 'theme': '', 'templates': [], 'timelineTemplates': [], 'imageId': None }, 'allIds': [1] }
-    categories = { 'characters': [ { 'id': 1, 'name': 'Main', 'position': 0 }, { 'id': 2, 'name': 'Supporting', 'position': 1 }, { 'id': 3, 'name': 'Other', 'position': 2 } ], 'places': [], 'notes': [], 'tags': [] }
-    customAttributes = { 'characters': [], 'places': [], 'scenes': [], 'lines': [] }
-    notes = []
-    tags = []
-
-    fstring = '"file":' + json.dumps(file) + ','
-    ustring = '"ui":' + json.dumps(ui) + ','
-    sstring = '"series":' + json.dumps(series) + ','
-    bstring = '"books":' + json.dumps(books) + ','
-    btstring = '"beats":' + json.dumps(plottr.getBeats()) + ','
-    cdstring = '"cards":' + json.dumps(plottr.getCards()) + ','
-    cstring = '"categories":' + json.dumps(categories) + ','
-    chstring = '"characters":' + json.dumps(plottr.getCharacters()) + ','
-    custring = '"customAttributes":' + json.dumps(customAttributes) + ','
-    lstring = '"lines":' + json.dumps(plottr.getLines()) + ','
-    nstring = '"notes":' + json.dumps(notes) + ','
-    pstring = '"places":' + json.dumps(plottr.getPlaces()) + ','
-    tstring = '"tags":' + json.dumps(tags) + ','
-    istring = '"images":' + json.dumps(plottr.getImages())
-
-    with open(filename, 'w', encoding = 'utf-8') as fs:
-        fs.write('{' + fstring + ustring + sstring + bstring + btstring + cdstring + cstring + chstring + custring + lstring + nstring + pstring + tstring + istring + '}')
 
 def read_synopsis(scrivpackage, uuid):
 
@@ -522,10 +485,10 @@ for item in binder.findall('.//BinderItem'):
 for item in manuscript.find('Children'):
     parse_binderitem(item)
 
-booktitle = read_booktitle(args.scrivfile)
+plottr.setBookTitle(read_booktitle(args.scrivfile))
 read_characters(args.scrivfile, binder)
 read_places(args.scrivfile, binder)
 
 plottr.finalisePlotlines(args.flattenTimeline)
-write_plottrfile(plottr, plottrfile, booktitle)
+plottr.write(plottrfile)
 
