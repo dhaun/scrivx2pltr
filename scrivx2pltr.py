@@ -222,42 +222,6 @@ class PlottrContent:
         with open(filename, 'w', encoding = 'utf-8') as fs:
             fs.write('{' + fstring + ustring + sstring + bstring + btstring + cdstring + cstring + chstring + custring + lstring + nstring + pstring + tstring + istring + '}')
 
-
-### ###########################################################################
-
-plottr = PlottrContent()
-
-parser = argparse.ArgumentParser(description = 'Creating a Plottr file from a Scrivener file')
-parser.add_argument('scrivfile', help = 'Scrivener file to read')
-parser.add_argument('-o', '--output', metavar = 'pltrfile', help = 'Plottr file to write')
-parser.add_argument('--foldersAsScenes', action = 'store_true', default = False, help = 'Create scene cards for folders, too')
-parser.add_argument('--flattenTimeline', action = 'store_true', default = False, help = 'Keep all scenes in one timeline')
-parser.add_argument('--maxCharacters', type = int, default = -1, help = 'Max. number of Characters to read')
-parser.add_argument('--maxPlaces', type = int, default = -1, help = 'Max. number of Places to read')
-parser.add_argument('--charactersFolder', default = 'Characters', help = 'Name of the Characters folder, if renamed')
-parser.add_argument('--placesFolder', default = 'Places', help = 'Name of the Places folder, if renamed')
-args = parser.parse_args()
-
-# sanity check Scrivener file
-if args.scrivfile[-1] == '/':
-    args.scrivfile = args.scrivfile[:-1]
-if not os.path.isdir(args.scrivfile):
-    print("ERROR: Scrivener file " + args.scrivfile + " does not exist.")
-    exit(2)
-scrivx = os.path.basename(args.scrivfile) + 'x'
-scrivxfile = os.path.join(args.scrivfile, scrivx)
-if not os.path.isfile(scrivxfile):
-    print("ERROR: This does not appear to be a Scrivener 3 file.")
-    exit(3)
-
-if args.output:
-    plottrfile = args.output
-else:
-    # if not given, create from Scrivener file name
-    p = scrivx.replace('.scrivx', '.pltr')
-    plottrfile = os.path.join(os.path.dirname(args.scrivfile), p)
-
-
 ### ###########################################################################
 
 def read_synopsis(scrivpackage, uuid):
@@ -473,6 +437,38 @@ def parse_binderitem(item):
             plottr.closePlotline()
 
 ### ###########################################################################
+
+plottr = PlottrContent()
+
+parser = argparse.ArgumentParser(description = 'Creating a Plottr file from a Scrivener file')
+parser.add_argument('scrivfile', help = 'Scrivener file to read')
+parser.add_argument('-o', '--output', metavar = 'pltrfile', help = 'Plottr file to write')
+parser.add_argument('--foldersAsScenes', action = 'store_true', default = False, help = 'Create scene cards for folders, too')
+parser.add_argument('--flattenTimeline', action = 'store_true', default = False, help = 'Keep all scenes in one timeline')
+parser.add_argument('--maxCharacters', type = int, default = -1, help = 'Max. number of Characters to read')
+parser.add_argument('--maxPlaces', type = int, default = -1, help = 'Max. number of Places to read')
+parser.add_argument('--charactersFolder', default = 'Characters', help = 'Name of the Characters folder, if renamed')
+parser.add_argument('--placesFolder', default = 'Places', help = 'Name of the Places folder, if renamed')
+args = parser.parse_args()
+
+# sanity check Scrivener file
+if args.scrivfile[-1] == '/':
+    args.scrivfile = args.scrivfile[:-1]
+if not os.path.isdir(args.scrivfile):
+    print("ERROR: Scrivener file " + args.scrivfile + " does not exist.")
+    exit(2)
+scrivx = os.path.basename(args.scrivfile) + 'x'
+scrivxfile = os.path.join(args.scrivfile, scrivx)
+if not os.path.isfile(scrivxfile):
+    print("ERROR: This does not appear to be a Scrivener 3 file.")
+    exit(3)
+
+if args.output:
+    plottrfile = args.output
+else:
+    # if not given, create from Scrivener file name
+    p = scrivx.replace('.scrivx', '.pltr')
+    plottrfile = os.path.join(os.path.dirname(args.scrivfile), p)
 
 with open(scrivxfile, 'r', encoding = 'utf-8') as fs:
     sx = fs.read()
