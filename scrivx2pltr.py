@@ -160,7 +160,7 @@ class PlottrContent:
         self.lineId = self.lineId_last
 
 
-    def lineOneEmpty(self):
+    def __lineOneEmpty(self):
         """ Check if we're actually using the first plotline. """
 
         lineOneUsed = False
@@ -172,14 +172,14 @@ class PlottrContent:
         return not lineOneUsed
 
 
-    def finalisePlotlines(self, flatTimeline):
+    def __finalisePlotlines(self):
 
         # required special plotline
         self.lines.append({ 'id': self.lineId_max + 1, 'bookId': 'series', 'color': '#6cace4', 'title': 'Main Plot', 'position': 0, 'characterId': None, 'expanded': None, 'fromTemplateId': None })
 
-        if not flatTimeline:
+        if len(self.lines) > 2:
             # If the first plotline is not used, move all cards up one line.
-            if self.lineOneEmpty():
+            if self.__lineOneEmpty():
                 self.lines.pop(0)
                 for l in self.lines:
                     l['id'] = l['id'] - 1
@@ -191,6 +191,8 @@ class PlottrContent:
 
 
     def write(self, filename):
+
+        self.__finalisePlotlines()
 
         # mostly just the default values, taken from an "empty" Plottr file
         file = { 'fileName': filename, 'loaded': True, 'dirty': False, 'version': self.plottr_version }
@@ -490,6 +492,5 @@ plottr.setBookTitle(read_booktitle(args.scrivfile))
 read_characters(args.scrivfile, binder)
 read_places(args.scrivfile, binder)
 
-plottr.finalisePlotlines(args.flattenTimeline)
 plottr.write(plottrfile)
 
