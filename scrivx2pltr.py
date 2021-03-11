@@ -1,4 +1,4 @@
-# scrivx2pltr - Create Plottr scene cards from an existing Scrivener file
+# scrivx2pltr - Creates a Plottr file from a Scrivener 3 project
 #
 # written 2021 by Dirk Haun <dirk AT haun-online DOT de>
 # licensed under the MIT License
@@ -11,7 +11,6 @@ import sys
 import xml.etree.ElementTree as ET
 
 ### ###########################################################################
-# eventually, all code handling Plottr internals should move into this class
 
 class PlottrContent:
     """ Simple class to hold the content that goes into the Plottr file """
@@ -50,28 +49,13 @@ class PlottrContent:
         self.booktitle = ''
 
 
-    def setBookTitle(self, title):
-        self.booktitle = title
+    def __getColor(self, color):
+        """ Return one of the 6 Plottr default colors. """
+
+        return self.defaultColors[color % 6]
 
 
-    def addCard(self, title, description):
-
-        text = [ { 'text': description } ]
-        description = [ { 'type': 'paragraph', 'children': text } ]
-
-        card = { 'id': self.cardId, 'lineId': self.lineId, 'beatId': self.beatId, 'bookId': None, 'positionWithinLine': self.positionWithinLine, 'positionInBeat': self.positionInBeat, 'title': title, 'description': description, 'tags': [], 'characters': [], 'places': [], 'templates': [], 'imageId': None, 'fromTemplateId': None }
-
-        self.cards.append(card)
-        self.cardId = self.cardId + 1
-
-
-    def addBeat(self):
-        self.beats.append({ 'id': self.beatId, 'bookId': 1, 'position': self.positionOfBeat, 'title': 'auto', 'time': 0, 'templates': [], 'autoOutlineSort': True, 'fromTemplateId' : None })
-
-        self.beatId = self.beatId + 1
-        self.positionOfBeat = self.positionOfBeat + 1
-
-    def addImageFromFile(self, file):
+    def __addImageFromFile(self, file):
         """ Reads an image from a file into the proper Plottr structure.
         Returns the (internal) ID of the new image or 0 if not found. """
 
@@ -104,16 +88,33 @@ class PlottrContent:
             imgid = self.num_images
 
         return imgid
-        
-    def getColor(self, color):
-        """ Return one of the 6 Plottr default colors. """
 
-        return self.defaultColors[color % 6]
+
+    def setBookTitle(self, title):
+        self.booktitle = title
+
+
+    def addCard(self, title, description):
+
+        text = [ { 'text': description } ]
+        description = [ { 'type': 'paragraph', 'children': text } ]
+
+        card = { 'id': self.cardId, 'lineId': self.lineId, 'beatId': self.beatId, 'bookId': None, 'positionWithinLine': self.positionWithinLine, 'positionInBeat': self.positionInBeat, 'title': title, 'description': description, 'tags': [], 'characters': [], 'places': [], 'templates': [], 'imageId': None, 'fromTemplateId': None }
+
+        self.cards.append(card)
+        self.cardId = self.cardId + 1
+
+
+    def addBeat(self):
+        self.beats.append({ 'id': self.beatId, 'bookId': 1, 'position': self.positionOfBeat, 'title': 'auto', 'time': 0, 'templates': [], 'autoOutlineSort': True, 'fromTemplateId' : None })
+
+        self.beatId = self.beatId + 1
+        self.positionOfBeat = self.positionOfBeat + 1
 
 
     def addCharacter(self, name, description, imagefile):
 
-        imageId = self.addImageFromFile(imagefile)
+        imageId = self.__addImageFromFile(imagefile)
         if imageId > 0:
             image = str(imageId)
         else:
@@ -127,7 +128,7 @@ class PlottrContent:
 
     def addPlace(self, name, description, imagefile):
 
-        imageId = self.addImageFromFile(imagefile)
+        imageId = self.__addImageFromFile(imagefile)
         if imageId > 0:
             image = str(imageId)
         else:
@@ -147,7 +148,7 @@ class PlottrContent:
         self.lineId = self.lineId_max
         self.position_for_line = self.position_for_line + 1
 
-        col = self.getColor(self.lineId - 1)
+        col = self.__getColor(self.lineId - 1)
         self.lines.append({ 'id': self.lineId, 'bookId': 1, 'color': col, 'title': title, 'position': self.position_for_line, 'characterId': None, 'expanded': None, 'fromTemplateId': None })
 
 
@@ -183,7 +184,7 @@ class PlottrContent:
                 for l in self.lines:
                     l['id'] = l['id'] - 1
                     l['position'] = l['position'] - 1
-                    l['color'] = self.getColor(l['id'] - 1)
+                    l['color'] = self.__getColor(l['id'] - 1)
 
                 for card in self.cards:
                     card['lineId'] = card['lineId'] - 1
