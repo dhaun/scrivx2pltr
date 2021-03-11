@@ -464,7 +464,11 @@ if not os.path.isfile(scrivxfile):
     exit(3)
 
 if args.output:
-    plottrfile = args.output
+    if os.path.isdir(args.output):
+        p = scrivx.replace('.scrivx', '.pltr')
+        plottrfile = os.path.join(args.output, p)
+    else:
+        plottrfile = args.output
 else:
     # if not given, create from Scrivener file name
     p = scrivx.replace('.scrivx', '.pltr')
