@@ -258,7 +258,7 @@ def read_booktitle(scrivfile):
 
     return booktitle
 
-def read_characters(scrivfile, binder):
+def read_characters(scrivfile, scrivp):
 
     global args, plottr
 
@@ -272,7 +272,7 @@ def read_characters(scrivfile, binder):
 
     # first we need to find the Characters folder
     found = False
-    for item in binder.findall('./Binder/BinderItem'):
+    for item in scrivp.findall('./Binder/BinderItem'):
         if item.attrib['Type'] == 'Folder':
             for child in item:
                 if child.tag == 'Title' and child.text == foldername:
@@ -320,7 +320,7 @@ def read_characters(scrivfile, binder):
                     break
 
 
-def read_places(scrivfile, binder):
+def read_places(scrivfile, scrivp):
 
     global args, plottr
 
@@ -334,7 +334,7 @@ def read_places(scrivfile, binder):
 
     # first we need to find the Places folder
     found = False
-    for item in binder.findall('./Binder/BinderItem'):
+    for item in scrivp.findall('./Binder/BinderItem'):
         if item.attrib['Type'] == 'Folder':
             for child in item:
                 if child.tag == 'Title' and child.text == foldername:
@@ -478,20 +478,20 @@ else:
 with open(scrivxfile, 'r', encoding = 'utf-8') as fs:
     sx = fs.read()
 
-binder = ET.fromstring(sx)
+scrivp = ET.fromstring(sx)
 
 # find the Manuscript folder, aka DraftFolder
-for item in binder.findall('.//BinderItem'):
+for item in scrivp.findall('.//BinderItem'):
     if item.attrib['Type'] == 'DraftFolder':
         manuscript = item
         break
 
 for item in manuscript.find('Children'):
-    parse_binderitem(item)
+    parse_scrivpitem(item)
 
 plottr.setBookTitle(read_booktitle(args.scrivfile))
-read_characters(args.scrivfile, binder)
-read_places(args.scrivfile, binder)
+read_characters(args.scrivfile, scrivp)
+read_places(args.scrivfile, scrivp)
 
 plottr.write(plottrfile)
 
