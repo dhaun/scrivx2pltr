@@ -48,6 +48,9 @@ class PlottrContent:
 
         self.booktitle = ''
 
+        self.labels = {}
+        self.useLabelColorsForSceneCards = False
+
 
     def __getColor(self, color):
         """ Return one of the 6 Plottr default colors. """
@@ -101,12 +104,25 @@ class PlottrContent:
         self.booktitle = title
 
 
-    def addCard(self, title, description):
+    def useLabelColors(self, useLabelColors):
+        self.useLabelColorsForSceneCards = useLabelColors
+
+
+    def addLabel(self, id, title, color):
+        self.labels[id] = { 'title': title, 'color': color }
+
+
+    def addCard(self, title, description, label = ''):
 
         text = [ { 'text': description } ]
         description = [ { 'type': 'paragraph', 'children': text } ]
 
-        card = { 'id': self.cardId, 'lineId': self.lineId, 'beatId': self.beatId, 'bookId': None, 'positionWithinLine': self.positionWithinLine, 'positionInBeat': self.positionInBeat, 'title': title, 'description': description, 'tags': [], 'characters': [], 'places': [], 'templates': [], 'imageId': None, 'fromTemplateId': None }
+        card = { 'id': self.cardId, 'lineId': self.lineId, 'beatId': self.beatId, 'bookId': None, 'positionWithinLine': self.positionWithinLine, 'positionInBeat': self.positionInBeat, 'title': title, 'description': description, 'tags': [], 'characters': [], 'places': [], 'templates': [], 'imageId': None, 'fromTemplateId': None, 'color': None }
+
+        if self.useLabelColorsForSceneCards and len(label) > 0:
+            l = self.labels.get(label)
+            if l is not None:
+                card['color'] = l['color']
 
         self.cards.append(card)
         self.cardId = self.cardId + 1
@@ -423,11 +439,14 @@ def parse_binderitem(item):
         child = item.find('Title')
         if child is not None:
             title = child.text
-        # for now, the Title is all we can handle (tbd: labels and such)
+        label = ''
+        child = item.find('./MetaData/LabelID')
+        if child is not None:
+            label = child.text
 
         s = read_synopsis(args.scrivfile, item.attrib['UUID'])
 
-        plottr.addCard(title, s)
+        plottr.addCard(title, s, label)
 
     # recurse for any child items / subfolders
     if item.find('Children') is not None:
@@ -436,6 +455,34 @@ def parse_binderitem(item):
 
         if not args.flattenTimeline:
             plottr.closePlotline()
+
+def color_to_hex(scrivcolor):
+    """ Scrivener stores colours as 3 float values,
+        Plottr prefers 6-digit hex strings. So convert. """
+
+    h = '#'
+    values = scrivcolor.split()
+    for v in values:
+        h = h + '{:02x}'.format(round(float(v) * 255))
+
+    return h
+
+def read_labels(scrivp):
+
+    labelsettings = scrivp.find('./LabelSettings')
+    if labelsettings is not None:
+        defId = '-1'
+        for child in labelsettings:
+            if child.tag == 'DefaultLabelID':
+                defId = child.text
+            elif child.tag == 'Labels':
+                for label in child.findall('./Label'):
+                    if label.attrib['ID'] == defId:
+                        continue
+                    else:
+                        plottr.addLabel(label.attrib['ID'], label.text, color_to_hex(label.attrib['Color']))
+                break
+
 
 ### ###########################################################################
 
@@ -446,6 +493,7 @@ parser.add_argument('scrivfile', help = 'Scrivener file to read')
 parser.add_argument('-o', '--output', metavar = 'pltrfile', help = 'Plottr file to write')
 parser.add_argument('--foldersAsScenes', action = 'store_true', default = False, help = 'Create scene cards for folders, too')
 parser.add_argument('--flattenTimeline', action = 'store_true', default = False, help = 'Keep all scenes in one timeline')
+parser.add_argument('--useLabelColors', action = 'store_true', default = False, help = 'Use the Scrivener label colors for the scene cards')
 parser.add_argument('--maxCharacters', type = int, default = -1, help = 'Max. number of Characters to read')
 parser.add_argument('--maxPlaces', type = int, default = -1, help = 'Max. number of Places to read')
 parser.add_argument('--charactersFolder', default = 'Characters', help = 'Name of the Characters folder, if renamed')
@@ -475,6 +523,8 @@ else:
     p = scrivx.replace('.scrivx', '.pltr')
     plottrfile = os.path.join(os.path.dirname(args.scrivfile), p)
 
+plottr.useLabelColors(args.useLabelColors)
+
 with open(scrivxfile, 'r', encoding = 'utf-8') as fs:
     sx = fs.read()
 
@@ -486,12 +536,13 @@ for item in scrivp.findall('.//BinderItem'):
         manuscript = item
         break
 
+read_labels(scrivp)
+read_characters(args.scrivfile, scrivp)
+read_places(args.scrivfile, scrivp)
+plottr.setBookTitle(read_booktitle(args.scrivfile))
+
 for item in manuscript.find('Children'):
     parse_binderitem(item)
 
-plottr.setBookTitle(read_booktitle(args.scrivfile))
-read_characters(args.scrivfile, scrivp)
-read_places(args.scrivfile, scrivp)
-
 plottr.write(plottrfile)
-
+        
