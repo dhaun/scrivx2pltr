@@ -487,7 +487,7 @@ for item in scrivp.findall('.//BinderItem'):
         break
 
 for item in manuscript.find('Children'):
-    parse_scrivpitem(item)
+    parse_binderitem(item)
 
 plottr.setBookTitle(read_booktitle(args.scrivfile))
 read_characters(args.scrivfile, scrivp)
