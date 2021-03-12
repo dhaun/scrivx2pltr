@@ -90,6 +90,13 @@ class PlottrContent:
         return imgid
 
 
+    def __addBeat(self):
+        self.beats.append({ 'id': self.beatId, 'bookId': 1, 'position': self.positionOfBeat, 'title': 'auto', 'time': 0, 'templates': [], 'autoOutlineSort': True, 'fromTemplateId' : None })
+
+        self.beatId = self.beatId + 1
+        self.positionOfBeat = self.positionOfBeat + 1
+
+
     def setBookTitle(self, title):
         self.booktitle = title
 
@@ -104,12 +111,8 @@ class PlottrContent:
         self.cards.append(card)
         self.cardId = self.cardId + 1
 
-
-    def addBeat(self):
-        self.beats.append({ 'id': self.beatId, 'bookId': 1, 'position': self.positionOfBeat, 'title': 'auto', 'time': 0, 'templates': [], 'autoOutlineSort': True, 'fromTemplateId' : None })
-
-        self.beatId = self.beatId + 1
-        self.positionOfBeat = self.positionOfBeat + 1
+        # update beats
+        self.__addBeat()
 
 
     def addCharacter(self, name, description, imagefile):
@@ -425,8 +428,6 @@ def parse_binderitem(item):
         s = read_synopsis(args.scrivfile, item.attrib['UUID'])
 
         plottr.addCard(title, s)
-        # update beats
-        plottr.addBeat()
 
     # recurse for any child items / subfolders
     if item.find('Children') is not None:
