@@ -51,6 +51,8 @@ With `--charactersFolder` and `--placesFolder`, you can specify the names of the
 
 Use `--useLabelColors` to color the created Plottr scene cards with the label color the respective scenes have in Scrivener (requires Plottr 2021.3.9).
 
+If you are using Scrivener labels or keywords (or both) to connect scenes and characters, use `--labelsAreCharacters` and/or `--keywordsAreCharacters` to make that connection in Plottr, too.
+
 
 ## Caveats and Side Effects
 
