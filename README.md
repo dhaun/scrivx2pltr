@@ -17,12 +17,6 @@ Plottr can already export to Scrivener and they are supposedly [working on synch
 Characters and Places are created from files in the respective Scrivener folders. Images are exported, too. The content of the files is still missing, though, mostly due to lack of an idea how to parse RTF into something Plottr can understand. 
 
 
-## What it doesn't do yet
-
-Export notes and labels.
-Not sure how to do this yet, since there are no standards for those in Scrivener.
-
-
 ## Requirements
 
 - Python 3
