@@ -221,7 +221,7 @@ class PlottrContent:
     def newPlotline(self, title):
         """ Start a new plotline. """
 
-        self.lineId_last = self.lineId
+        state = self.lineId
         self.lineId_max = self.lineId_max + 1
         self.lineId = self.lineId_max
         self.position_for_line = self.position_for_line + 1
@@ -229,13 +229,16 @@ class PlottrContent:
         col = self.__getColor(self.lineId - 1)
         self.lines.append({ 'id': self.lineId, 'bookId': 1, 'color': col, 'title': title, 'position': self.position_for_line, 'characterId': None, 'expanded': None, 'fromTemplateId': None })
 
+        # return an unexplained "state" to the caller for use in recursion
+        return state
 
-    def closePlotline(self):
+
+    def closePlotline(self, state):
         """ Close current plotline and return to the previous one. """
 
         if self.lineId > self.lineId_max:
             self.lineId_max = self.lineId
-        self.lineId = self.lineId_last
+        self.lineId = state # "state" is really just the last lineId (for now)
 
 
     def __lineOneEmpty(self):
@@ -499,7 +502,7 @@ def parse_binderitem(item):
                 plotline_title = child.text
 
             # add plotline
-            plottr.newPlotline(plotline_title)
+            state = plottr.newPlotline(plotline_title)
 
     if item.attrib['Type'] == 'Text' or (item.attrib['Type'] == 'Folder' and args.foldersAsScenes):
 
@@ -530,7 +533,7 @@ def parse_binderitem(item):
             parse_binderitem(child)
 
         if not args.flattenTimeline:
-            plottr.closePlotline()
+            plottr.closePlotline(state)
 
 def color_to_hex(scrivcolor):
     """ Scrivener stores colours as 3 float values,
