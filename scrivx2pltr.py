@@ -49,10 +49,12 @@ class PlottrContent:
         self.booktitle = ''
 
         self.labels = {}
+        self.keywords = {}
 
         self.config = {}
         self.config['useLabelColorsForSceneCards'] = False
         self.config['labelsAreCharacters'] = False
+        self.config['keywordsAreCharacters'] = False
 
 
     def __getColor(self, color):
@@ -115,8 +117,16 @@ class PlottrContent:
         self.config['labelsAreCharacters'] = labelsAreCharacters
 
 
+    def keywordsAreCharacters(self, keywordsAreCharacters):
+        self.config['keywordsAreCharacters'] = keywordsAreCharacters
+
+
     def addLabel(self, id, title, color):
         self.labels[id] = { 'title': title, 'color': color }
+
+
+    def addKeyword(self, id, title, color):
+        self.keywords[id] = { 'title': title, 'color': color }
 
 
     def __matchLabelToCharacter(self, label):
@@ -133,7 +143,24 @@ class PlottrContent:
         return characters
 
 
-    def addCard(self, title, description, label = ''):
+    def __matchKeywordsToCharacters(self, keywords, characters):
+        """ See if we can match any Scrivener keywords with character names.
+            Should run after __matchLabelToCharacter(). """
+
+        for k in keywords:
+            kch = self.keywords.get(k)
+            if kch is not None:
+                # found the keyword, now find it in the list of characters
+                for ch in self.characters:
+                    if ch['name'] == kch['title']:
+                        if not ch['id'] in characters:
+                            characters.append(ch['id'])
+                        break
+
+        return characters
+
+
+    def addCard(self, title, description, label = '', keywords = []):
 
         text = [ { 'text': description } ]
         description = [ { 'type': 'paragraph', 'children': text } ]
@@ -147,6 +174,9 @@ class PlottrContent:
 
         if self.config['labelsAreCharacters'] and len(label) > 0:
             card['characters'] = self.__matchLabelToCharacter(label)
+
+        if self.config['keywordsAreCharacters'] and len(keywords) > 0:
+            card['characters'] = self.__matchKeywordsToCharacters(keywords, card['characters'])
 
         self.cards.append(card)
         self.cardId = self.cardId + 1
@@ -457,20 +487,27 @@ def parse_binderitem(item):
             plottr.newPlotline(plotline_title)
 
     if item.attrib['Type'] == 'Text' or (item.attrib['Type'] == 'Folder' and args.foldersAsScenes):
-        # add this as a scene
 
+        # add this as a scene
         title = ''
         child = item.find('Title')
         if child is not None:
             title = child.text
+
         label = ''
         child = item.find('./MetaData/LabelID')
         if child is not None:
             label = child.text
 
+        keywords = []
+        child = item.find('./Keywords')
+        if child is not None:
+            for k in child.findall('KeywordID'):
+                keywords.append(k.text)
+
         s = read_synopsis(args.scrivfile, item.attrib['UUID'])
 
-        plottr.addCard(title, s, label)
+        plottr.addCard(title, s, label, keywords)
 
     # recurse for any child items / subfolders
     if item.find('Children') is not None:
@@ -507,6 +544,24 @@ def read_labels(scrivp):
                         plottr.addLabel(label.attrib['ID'], label.text, color_to_hex(label.attrib['Color']))
                 break
 
+def read_keywords(scrivp):
+
+    keywords = scrivp.find('./Keywords')
+    if keywords is not None:
+        for k in keywords:
+            keyId = k.attrib['ID']
+            title = ''
+            tg = k.find('Title')
+            if tg is not None:
+                title = tg.text
+            col = ''
+            cl = k.find('Color')
+            if cl is not None:
+                color = color_to_hex(cl.text)
+
+            if len(title) > 0 and len(color) > 0:
+                plottr.addKeyword(keyId, title, color)
+
 
 ### ###########################################################################
 
@@ -519,6 +574,7 @@ parser.add_argument('--foldersAsScenes', action = 'store_true', default = False,
 parser.add_argument('--flattenTimeline', action = 'store_true', default = False, help = 'Keep all scenes in one timeline')
 parser.add_argument('--useLabelColors', action = 'store_true', default = False, help = 'Use the Scrivener label colors for the scene cards')
 parser.add_argument('--labelsAreCharacters', action = 'store_true', default = False, help = 'Match Scrivener labels to characters')
+parser.add_argument('--keywordsAreCharacters', action = 'store_true', default = False, help = 'Match Scrivener keywords to characters')
 parser.add_argument('--maxCharacters', type = int, default = -1, help = 'Max. number of Characters to read')
 parser.add_argument('--maxPlaces', type = int, default = -1, help = 'Max. number of Places to read')
 parser.add_argument('--charactersFolder', default = 'Characters', help = 'Name of the Characters folder, if renamed')
@@ -550,6 +606,7 @@ else:
 
 plottr.useLabelColors(args.useLabelColors)
 plottr.labelsAreCharacters(args.labelsAreCharacters)
+plottr.keywordsAreCharacters(args.keywordsAreCharacters)
 
 with open(scrivxfile, 'r', encoding = 'utf-8') as fs:
     sx = fs.read()
@@ -563,6 +620,7 @@ for item in scrivp.findall('.//BinderItem'):
         break
 
 read_labels(scrivp)
+read_keywords(scrivp)
 read_characters(args.scrivfile, scrivp)
 read_places(args.scrivfile, scrivp)
 plottr.setBookTitle(read_booktitle(args.scrivfile))
