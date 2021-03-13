@@ -252,10 +252,7 @@ class PlottrContent:
 
     def __finalisePlotlines(self):
 
-        # required special plotline
-        self.lines.append({ 'id': self.lineId_max + 1, 'bookId': 'series', 'color': '#6cace4', 'title': 'Main Plot', 'position': 0, 'characterId': None, 'expanded': None, 'fromTemplateId': None })
-
-        if len(self.lines) > 2:
+        if len(self.lines) > 1:
             # If the first plotline is not used, move all cards up one line.
             if self.__lineOneEmpty():
                 self.lines.pop(0)
@@ -263,9 +260,13 @@ class PlottrContent:
                     l['id'] = l['id'] - 1
                     l['position'] = l['position'] - 1
                     l['color'] = self.__getColor(l['id'] - 1)
+                self.lineId_max = self.lineId_max - 1
 
                 for card in self.cards:
                     card['lineId'] = card['lineId'] - 1
+
+        # required special plotline
+        self.lines.append({ 'id': self.lineId_max + 1, 'bookId': 'series', 'color': '#6cace4', 'title': 'Main Plot', 'position': 0, 'characterId': None, 'expanded': None, 'fromTemplateId': None })
 
 
     def write(self, filename):
