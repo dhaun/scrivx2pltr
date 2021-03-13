@@ -49,7 +49,10 @@ class PlottrContent:
         self.booktitle = ''
 
         self.labels = {}
-        self.useLabelColorsForSceneCards = False
+
+        self.config = {}
+        self.config['useLabelColorsForSceneCards'] = False
+        self.config['labelsAreCharacters'] = False
 
 
     def __getColor(self, color):
@@ -105,11 +108,29 @@ class PlottrContent:
 
 
     def useLabelColors(self, useLabelColors):
-        self.useLabelColorsForSceneCards = useLabelColors
+        self.config['useLabelColorsForSceneCards'] = useLabelColors
+
+
+    def labelsAreCharacters(self, labelsAreCharacters):
+        self.config['labelsAreCharacters'] = labelsAreCharacters
 
 
     def addLabel(self, id, title, color):
         self.labels[id] = { 'title': title, 'color': color }
+
+
+    def __matchLabelToCharacter(self, label):
+
+        characters = []
+
+        l = self.labels.get(label)
+        if l is not None:
+            for ch in self.characters:
+                if ch['name'] == l['title']:
+                    characters.append(ch['id'])
+                    break
+
+        return characters
 
 
     def addCard(self, title, description, label = ''):
@@ -119,10 +140,13 @@ class PlottrContent:
 
         card = { 'id': self.cardId, 'lineId': self.lineId, 'beatId': self.beatId, 'bookId': None, 'positionWithinLine': self.positionWithinLine, 'positionInBeat': self.positionInBeat, 'title': title, 'description': description, 'tags': [], 'characters': [], 'places': [], 'templates': [], 'imageId': None, 'fromTemplateId': None, 'color': None }
 
-        if self.useLabelColorsForSceneCards and len(label) > 0:
+        if self.config['useLabelColorsForSceneCards'] and len(label) > 0:
             l = self.labels.get(label)
             if l is not None:
                 card['color'] = l['color']
+
+        if self.config['labelsAreCharacters'] and len(label) > 0:
+            card['characters'] = self.__matchLabelToCharacter(label)
 
         self.cards.append(card)
         self.cardId = self.cardId + 1
@@ -494,6 +518,7 @@ parser.add_argument('-o', '--output', metavar = 'pltrfile', help = 'Plottr file 
 parser.add_argument('--foldersAsScenes', action = 'store_true', default = False, help = 'Create scene cards for folders, too')
 parser.add_argument('--flattenTimeline', action = 'store_true', default = False, help = 'Keep all scenes in one timeline')
 parser.add_argument('--useLabelColors', action = 'store_true', default = False, help = 'Use the Scrivener label colors for the scene cards')
+parser.add_argument('--labelsAreCharacters', action = 'store_true', default = False, help = 'Match Scrivener labels to characters')
 parser.add_argument('--maxCharacters', type = int, default = -1, help = 'Max. number of Characters to read')
 parser.add_argument('--maxPlaces', type = int, default = -1, help = 'Max. number of Places to read')
 parser.add_argument('--charactersFolder', default = 'Characters', help = 'Name of the Characters folder, if renamed')
@@ -524,6 +549,7 @@ else:
     plottrfile = os.path.join(os.path.dirname(args.scrivfile), p)
 
 plottr.useLabelColors(args.useLabelColors)
+plottr.labelsAreCharacters(args.labelsAreCharacters)
 
 with open(scrivxfile, 'r', encoding = 'utf-8') as fs:
     sx = fs.read()
@@ -545,4 +571,4 @@ for item in manuscript.find('Children'):
     parse_binderitem(item)
 
 plottr.write(plottrfile)
-        
+
