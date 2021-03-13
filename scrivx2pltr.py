@@ -47,6 +47,7 @@ class PlottrContent:
         self.position_for_line = 0
 
         self.booktitle = ''
+        self.premise = ''
 
         self.labels = {}
         self.keywords = {}
@@ -107,6 +108,10 @@ class PlottrContent:
 
     def setBookTitle(self, title):
         self.booktitle = title
+
+
+    def setPremise(self, premise):
+        self.premise = premise
 
 
     def useLabelColors(self, useLabelColors):
@@ -270,8 +275,8 @@ class PlottrContent:
         # mostly just the default values, taken from an "empty" Plottr file
         file = { 'fileName': filename, 'loaded': True, 'dirty': False, 'version': self.plottr_version }
         ui = { 'currentView': 'timeline', 'currentTimeline': 1, 'timelineIsExpanded': True, 'orientation': 'horizontal', 'darkMode': False, 'characterSort': 'name~asc', 'characterFilter': None, 'placeSort': 'name-asc', 'placeFilter': None, 'noteSort': 'title-asc', 'noteFilter': None, 'timelineFilter': None, 'timelineScrollPosition': { 'x': 0, 'y': 0 }, 'timeline': { 'size': 'large' } }
-        series = { 'name': self.booktitle, 'premise': '', 'genre': '', 'theme': '', 'templates': [] }
-        books = { '1': { 'id': 1, 'title': self.booktitle, 'premise': '', 'genre': '', 'theme': '', 'templates': [], 'timelineTemplates': [], 'imageId': None }, 'allIds': [1] }
+        series = { 'name': self.booktitle, 'premise': self.premise, 'genre': '', 'theme': '', 'templates': [] }
+        books = { '1': { 'id': 1, 'title': self.booktitle, 'premise': self.premise, 'genre': '', 'theme': '', 'templates': [], 'timelineTemplates': [], 'imageId': None }, 'allIds': [1] }
         categories = { 'characters': [ { 'id': 1, 'name': 'Main', 'position': 0 }, { 'id': 2, 'name': 'Supporting', 'position': 1 }, { 'id': 3, 'name': 'Other', 'position': 2 } ], 'places': [], 'notes': [], 'tags': [] }
         customAttributes = { 'characters': [], 'places': [], 'scenes': [], 'lines': [] }
         notes = []
@@ -308,9 +313,13 @@ def read_synopsis(scrivpackage, uuid):
 
     return s
 
-def read_booktitle(scrivfile):
+def read_bookinfo(scrivfile):
+
+    global plottr
 
     booktitle = ''
+    premise = ''
+
     compile_xml = os.path.join(scrivfile, 'Settings/compile.xml')
     if os.path.isfile(compile_xml):
         with open(compile_xml, 'r', encoding = 'utf-8') as fs:
@@ -320,13 +329,18 @@ def read_booktitle(scrivfile):
         item = cxml.find('.//ProjectTitle')
         if item is not None:
             booktitle = item.text
+        item = cxml.find('.//EbookDescription')
+        if item is not None:
+            premise = item.text
 
-    # fallback: use file name
+    # fallback: use file name as book title
     if len(booktitle) == 0:
         b = os.path.basename(scrivfile)
         booktitle = b.replace('.scriv', '')
 
-    return booktitle
+    plottr.setBookTitle(booktitle)
+    plottr.setPremise(premise)
+
 
 def read_characters(scrivfile, scrivp):
 
@@ -623,7 +637,7 @@ read_labels(scrivp)
 read_keywords(scrivp)
 read_characters(args.scrivfile, scrivp)
 read_places(args.scrivfile, scrivp)
-plottr.setBookTitle(read_booktitle(args.scrivfile))
+read_bookinfo(args.scrivfile)
 
 for item in manuscript.find('Children'):
     parse_binderitem(item)
