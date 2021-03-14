@@ -592,8 +592,6 @@ def read_keywords(scrivp):
 
 ### ###########################################################################
 
-plottr = PlottrContent()
-
 parser = argparse.ArgumentParser(description = 'Creating a Plottr file from a Scrivener file')
 parser.add_argument('scrivfile', help = 'Scrivener file to read')
 parser.add_argument('-o', '--output', metavar = 'pltrfile', help = 'Plottr file to write')
@@ -614,10 +612,20 @@ if args.scrivfile[-1] == '/':
 if not os.path.isdir(args.scrivfile):
     print("ERROR: Scrivener file " + args.scrivfile + " does not exist.")
     exit(2)
-scrivx = os.path.basename(args.scrivfile) + 'x'
+
+# name of the .scrivx file may differ from the .scriv
+scrivx = ''
+with os.scandir(args.scrivfile) as it:
+    for entry in it:
+        if entry.name.endswith('.scrivx'):
+            scrivx = entry.name
+            break
+if len(scrivx) == 0: # last-ditch effort ...
+    scrivx = os.path.basename(args.scrivfile) + 'x'
+
 scrivxfile = os.path.join(args.scrivfile, scrivx)
 if not os.path.isfile(scrivxfile):
-    print("ERROR: This does not appear to be a Scrivener 3 file.")
+    print("ERROR: This does not appear to be a Scrivener file.")
     exit(3)
 
 if args.output:
@@ -631,14 +639,23 @@ else:
     p = scrivx.replace('.scrivx', '.pltr')
     plottrfile = os.path.join(os.path.dirname(args.scrivfile), p)
 
-plottr.useLabelColors(args.useLabelColors)
-plottr.labelsAreCharacters(args.labelsAreCharacters)
-plottr.keywordsAreCharacters(args.keywordsAreCharacters)
-
 with open(scrivxfile, 'r', encoding = 'utf-8') as fs:
     sx = fs.read()
 
 scrivp = ET.fromstring(sx)
+
+# final Scrivener sanity check: is it a Scrivener 3 file (XML version 2.0)?
+if scrivp.attrib['Version'] != '2.0':
+    print("ERROR: This does not appear to be a Scrivener 3 file.")
+    exit(4)
+
+# all fine, let's go
+
+plottr = PlottrContent()
+
+plottr.useLabelColors(args.useLabelColors)
+plottr.labelsAreCharacters(args.labelsAreCharacters)
+plottr.keywordsAreCharacters(args.keywordsAreCharacters)
 
 # find the Manuscript folder, aka DraftFolder
 for item in scrivp.findall('.//BinderItem'):
