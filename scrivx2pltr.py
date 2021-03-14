@@ -233,40 +233,49 @@ class PlottrContent:
         return state
 
 
+    def __plotlineEmpty(self):
+        """ Check if the current plotline is empty, ie. has no cards on it """
+
+        lineUsed = False
+        for card in self.cards:
+            if card['lineId'] == self.lineId:
+                lineUsed = True
+                break
+
+        return not lineUsed
+
+
     def closePlotline(self, state):
         """ Close current plotline and return to the previous one. """
+
+        if self.__plotlineEmpty():
+            # current plotline is empty - remove it and move the others up by 1
+            self.lines.pop(self.lineId - 1)
+            for l in self.lines:
+                if l['id'] > self.lineId:
+                    l['id'] = l['id'] - 1
+                    l['position'] = l['position'] - 1
+                    l['color'] = self.__getColor(l['id'] - 1)
+
+            for card in self.cards:
+                if card['lineId'] > self.lineId:
+                    card['lineId'] = card['lineId'] - 1
+
+            # adjust counters
+            if self.lineId_max > self.lineId:
+                self.lineId_max = self.lineId_max - 1
+            if state > self.lineId:
+                state = state - 1
+            self.lineId = self.lineId - 1
 
         if self.lineId > self.lineId_max:
             self.lineId_max = self.lineId
         self.lineId = state # "state" is really just the last lineId (for now)
 
 
-    def __lineOneEmpty(self):
-        """ Check if we're actually using the first plotline. """
-
-        lineOneUsed = False
-        for card in self.cards:
-            if card['lineId'] == 1:
-                lineOneUsed = True
-                break
-
-        return not lineOneUsed
-
-
     def __finalisePlotlines(self):
 
-        if len(self.lines) > 1:
-            # If the first plotline is not used, move all cards up one line.
-            if self.__lineOneEmpty():
-                self.lines.pop(0)
-                for l in self.lines:
-                    l['id'] = l['id'] - 1
-                    l['position'] = l['position'] - 1
-                    l['color'] = self.__getColor(l['id'] - 1)
-                self.lineId_max = self.lineId_max - 1
-
-                for card in self.cards:
-                    card['lineId'] = card['lineId'] - 1
+        self.closePlotline(0) # explicitly close the default plotline
 
         # required special plotline
         self.lines.append({ 'id': self.lineId_max + 1, 'bookId': 'series', 'color': '#6cace4', 'title': 'Main Plot', 'position': 0, 'characterId': None, 'expanded': None, 'fromTemplateId': None })
