@@ -333,7 +333,7 @@ def read_bookinfo(scrivfile):
     booktitle = ''
     premise = ''
 
-    compile_xml = os.path.join(scrivfile, 'Settings/compile.xml')
+    compile_xml = os.path.join(scrivfile, 'Settings', 'compile.xml')
     if os.path.isfile(compile_xml):
         with open(compile_xml, 'r', encoding = 'utf-8') as fs:
             xmlstring = fs.read()
