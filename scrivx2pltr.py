@@ -10,6 +10,8 @@ import os.path
 import sys
 import xml.etree.ElementTree as ET
 
+#from striprtf import rtf_to_text
+
 ### ###########################################################################
 
 class PlottrContent:
@@ -190,7 +192,7 @@ class PlottrContent:
         self.__addBeat()
 
 
-    def addCharacter(self, name, description, imagefile):
+    def addCharacter(self, name, description, imagefile, notes = ''):
 
         imageId = self.__addImageFromFile(imagefile)
         if imageId > 0:
@@ -198,13 +200,18 @@ class PlottrContent:
         else:
             image = ''
 
-        ch = { 'id': self.characterId, 'name': name, 'description': description, 'notes': [], 'color': None, 'cards': [], 'noteIds': [], 'templates': [], 'tags': [], 'categoryId': '1', 'imageId': image, 'bookIds': [1] }
+        if len(notes) > 0:
+            n = [ { 'children': [ { 'text': notes } ] } ]
+        else:
+            n = []
+
+        ch = { 'id': self.characterId, 'name': name, 'description': description, 'notes': n, 'color': None, 'cards': [], 'noteIds': [], 'templates': [], 'tags': [], 'categoryId': '1', 'imageId': image, 'bookIds': [1] }
 
         self.characters.append(ch)
         self.characterId = self.characterId + 1
 
 
-    def addPlace(self, name, description, imagefile):
+    def addPlace(self, name, description, imagefile, notes = ''):
 
         imageId = self.__addImageFromFile(imagefile)
         if imageId > 0:
@@ -212,7 +219,12 @@ class PlottrContent:
         else:
             image = ''
 
-        pl = { 'id': self.placeId, 'name': name, 'description': description, 'notes': [], 'color': None, 'cards': [], 'noteIds': [], 'templates': [], 'tags': [], 'imageId': image, 'bookIds': [1] }
+        if len(notes) > 0:
+            n = [ { 'children': [ { 'text': notes } ] } ]
+        else:
+            n = []
+
+        pl = { 'id': self.placeId, 'name': name, 'description': description, 'notes': n, 'color': None, 'cards': [], 'noteIds': [], 'templates': [], 'tags': [], 'imageId': image, 'bookIds': [1] }
 
         self.places.append(pl)
         self.placeId = self.placeId + 1
@@ -326,6 +338,19 @@ def read_synopsis(scrivpackage, uuid):
 
     return s
 
+def read_notes(scrivpackage, uuid):
+
+    n = ''
+
+    #syn = os.path.join(scrivpackage, 'Files', 'Data', uuid, 'notes.rtf')
+    #if os.path.isfile(syn):
+    #    with open(syn, 'r', encoding = 'utf-8') as fs:
+    #        n = fs.read()
+    #    if len(n) > 0:
+    #        n = rtf_to_text(n)
+
+    return n
+
 def read_bookinfo(scrivfile):
 
     global plottr
@@ -386,6 +411,7 @@ def read_characters(scrivfile, scrivp):
 
             character_name = ''
             character_desc = ''
+            character_notes = ''
             character_image = ''
             if char.attrib['Type'] == 'Text':
                 uuid = char.attrib['UUID']
@@ -404,12 +430,11 @@ def read_characters(scrivfile, scrivp):
                 if len(s) > 0:
                     character_desc = s
 
-                # tbd: need to find a good solution to read RTF
-                # n = read_rtf(os.path.join(content_path, 'content.rtf'))
-                # if len(n) > 0:
-                #     character_notes = format_text(n)
+                n = read_notes(scrivfile, uuid)
+                if len(n) > 0:
+                    character_notes = n
 
-                plottr.addCharacter(character_name, character_desc, character_image)
+                plottr.addCharacter(character_name, character_desc, character_image, character_notes)
                 characters_read = characters_read + 1
 
                 if args.maxCharacters > 0 and characters_read == args.maxCharacters:
@@ -448,6 +473,7 @@ def read_places(scrivfile, scrivp):
 
             place_name = ''
             place_desc = ''
+            place_notes = ''
             place_image = ''
             if place.attrib['Type'] == 'Text':
                 uuid = place.attrib['UUID']
@@ -466,37 +492,17 @@ def read_places(scrivfile, scrivp):
                 if len(s) > 0:
                     place_desc = s
 
-                # tbd: need to find a good solution to read RTF
-                # n = read_rtf(os.path.join(content_path, 'content.rtf'))
-                # if len(n) > 0:
-                #     place_notes = format_text(n)
+                n = read_notes(scrivfile, uuid)
+                if len(n) > 0:
+                    place_notes = n
 
-                plottr.addPlace(place_name, place_desc, place_image)
+                plottr.addPlace(place_name, place_desc, place_image, place_notes)
                 places_read = places_read + 1
 
                 if args.maxPlaces > 0 and places_read == args.maxPlaces:
                     # reached max. number of Places to read
                     break
 
-
-def read_rtf(file):
-
-    r = ''
-    if os.path.isfile(file):
-        with open(file, 'r') as fs:
-            rtf = fs.read() 
-    r = rtf
-
-    return r
-
-def format_text(text):
-
-    f = []
-
-    if len(text) > 0:
-        f.append( { 'children': [ { 'text': text } ] })
-
-    return f
 
 def parse_binderitem(item):
 
