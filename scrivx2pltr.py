@@ -53,11 +53,13 @@ class PlottrContent:
 
         self.labels = {}
         self.keywords = {}
+        self.tagId = 0
 
         self.config = {}
         self.config['useLabelColorsForSceneCards'] = False
         self.config['labelsAreCharacters'] = False
         self.config['keywordsAreCharacters'] = False
+        self.config['keywordsAreTags'] = False
 
 
     def __getColor(self, color):
@@ -128,12 +130,18 @@ class PlottrContent:
         self.config['keywordsAreCharacters'] = keywordsAreCharacters
 
 
+    def keywordsAreTags(self, keywordsAreTags):
+        self.config['keywordsAreTags'] = keywordsAreTags
+
+
     def addLabel(self, id, title, color):
         self.labels[id] = { 'title': title, 'color': color }
 
 
     def addKeyword(self, id, title, color):
-        self.keywords[id] = { 'title': title, 'color': color }
+        if self.config['keywordsAreTags']:
+            self.tagId = self.tagId + 1
+        self.keywords[id] = { 'title': title, 'color': color, 'tagId': self.tagId }
 
 
     def __matchLabelToCharacter(self, label):
@@ -167,6 +175,18 @@ class PlottrContent:
         return characters
 
 
+    def __matchKeywordsToTags(self, keywords):
+
+        tags = []
+        for k in keywords:
+            ktg = self.keywords.get(k)
+            if ktg is not None:
+                if ktg['tagId'] > 0:
+                    tags.append(ktg['tagId'])
+
+        return tags
+
+
     def addCard(self, title, description, label = '', keywords = []):
 
         text = [ { 'text': description } ]
@@ -184,6 +204,9 @@ class PlottrContent:
 
         if self.config['keywordsAreCharacters'] and len(keywords) > 0:
             card['characters'] = self.__matchKeywordsToCharacters(keywords, card['characters'])
+
+        if self.config['keywordsAreTags'] and len(keywords) > 0:
+            card['tags'] = self.__matchKeywordsToTags(keywords)
 
         self.cards.append(card)
         self.cardId = self.cardId + 1
@@ -305,7 +328,12 @@ class PlottrContent:
         categories = { 'characters': [ { 'id': 1, 'name': 'Main', 'position': 0 }, { 'id': 2, 'name': 'Supporting', 'position': 1 }, { 'id': 3, 'name': 'Other', 'position': 2 } ], 'places': [], 'notes': [], 'tags': [] }
         customAttributes = { 'characters': [], 'places': [], 'scenes': [], 'lines': [] }
         notes = []
+
         tags = []
+        if self.config['keywordsAreTags'] and self.tagId > 0:
+            for k in self.keywords:
+                t = self.keywords[k]
+                tags.append({'id': t['tagId'], 'title': t['title'], 'color': t['color']})
 
         fstring = '"file":' + json.dumps(file) + ','
         ustring = '"ui":' + json.dumps(ui) + ','
@@ -609,6 +637,7 @@ parser.add_argument('--flattenTimeline', action = 'store_true', default = False,
 parser.add_argument('--useLabelColors', action = 'store_true', default = False, help = 'Use the Scrivener label colors for the scene cards')
 parser.add_argument('--labelsAreCharacters', action = 'store_true', default = False, help = 'Match Scrivener labels to characters')
 parser.add_argument('--keywordsAreCharacters', action = 'store_true', default = False, help = 'Match Scrivener keywords to characters')
+parser.add_argument('--keywordsAreTags', action = 'store_true', default = False, help = 'Treat Scrivener keywords as Plottr tags')
 parser.add_argument('--maxCharacters', type = int, default = -1, help = 'Max. number of Characters to read')
 parser.add_argument('--maxPlaces', type = int, default = -1, help = 'Max. number of Places to read')
 parser.add_argument('--charactersFolder', default = 'Characters', help = 'Name of the Characters folder, if renamed')
@@ -665,6 +694,7 @@ plottr = PlottrContent()
 plottr.useLabelColors(args.useLabelColors)
 plottr.labelsAreCharacters(args.labelsAreCharacters)
 plottr.keywordsAreCharacters(args.keywordsAreCharacters)
+plottr.keywordsAreTags(args.keywordsAreTags)
 
 # find the Manuscript folder, aka DraftFolder
 for item in scrivp.findall('.//BinderItem'):
