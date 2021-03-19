@@ -578,22 +578,25 @@ def read_labels(scrivp):
                 break
 
 def read_keywords(scrivp):
+    """ Read all Scrivener keywords (which can be nested) into a flat list. """
 
     keywords = scrivp.find('./Keywords')
     if keywords is not None:
-        for k in keywords:
-            keyId = k.attrib['ID']
-            title = ''
-            tg = k.find('Title')
-            if tg is not None:
-                title = tg.text
-            col = ''
-            cl = k.find('Color')
-            if cl is not None:
-                color = color_to_hex(cl.text)
+        keys = keywords.findall('.//Keyword')
+        if keys is not None:
+            for k in keys:
+                keyId = k.attrib['ID']
+                title = ''
+                tg = k.find('Title')
+                if tg is not None:
+                    title = tg.text
+                col = ''
+                cl = k.find('Color')
+                if cl is not None:
+                    color = color_to_hex(cl.text)
 
-            if len(title) > 0 and len(color) > 0:
-                plottr.addKeyword(keyId, title, color)
+                if len(title) > 0 and len(color) > 0:
+                    plottr.addKeyword(keyId, title, color)
 
 
 ### ###########################################################################
