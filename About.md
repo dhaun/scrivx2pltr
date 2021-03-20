@@ -22,6 +22,8 @@ There are no corresponding options for places, mainly because I haven't had the 
 
 Scenes can be coloured in Scrivener, using a label's colour. To transfer label colours over to Plottr, use `--useLabelColors` (apologies for the mix of BE and AE here - the code uses AE spelling, but I write mostly in BE).
 
+Yet another approach is to use Scrivener keywords as tags in Plottr. With the option `--keywordsAreTags`, the script will do exactly that. You can also combine this with `--labelsAreCharacters` and/or `--keywordsAreCharacters`. While this would create some redundant information, it may help getting a quick overview since Plottr shows tags in a popup when you hover over a scene card whereas to see the characters in a scene, you have to edit the card.
+
 ## What else?
 
 Scrivener synopsis (the text you can write into a card in Scrivener) is carried over for scenes, characters, and places. I do not plan to copy over the actual text of a scene, since that would not make sense. You're supposed to only plot in Plottr, but write the scene out in Scrivener.
@@ -32,9 +34,9 @@ Images you put into the inspector for characters and places are carried over. I 
 
 ## Unused Plottr features
 
-There are also things in Plottr that have no obvious equivalent in Scrivener. Tags, for example. I guess Scrivener keywords are the next best thing, so if you're not using keywords for characters (as outlined above), they could be imported as tags. 
+There are also things in Plottr that have no obvious equivalent in Scrivener.
 
-Characters in Plottr have a category, so that you can label them a main or supporting character. As of now, all characters are labelled a main character when exporting from Scrivener. I wouldn't know how to mark a character as "supporting" in Scrivener that easily carries over to Plottr.
+Characters in Plottr have a category, so that you can label them a main or supporting character. As of now, all characters are labelled as main characters when exporting from Scrivener. I wouldn't know how to mark a character as "supporting" in Scrivener that easily carries over to Plottr.
 
 There's also no standard way to handle book series in Scrivener. You would normally have just one book of a series active, ie. in your drafts folder, ready to be compiled. Additional books would either have their own projects or you would keep them in separate (and thus non-standard) folders.
 
