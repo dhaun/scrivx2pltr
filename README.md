@@ -47,6 +47,8 @@ Use `--useLabelColors` to color the created Plottr scene cards with the label co
 
 If you are using Scrivener labels or keywords (or both) to connect scenes and characters, use `--labelsAreCharacters` and/or `--keywordsAreCharacters` to make that connection in Plottr, too.
 
+Use `--keywordsAreTags` to import and use Scrivener keywords as tags in Plottr.
+
 
 ## Caveats and Side Effects
 
