@@ -215,7 +215,7 @@ class PlottrContent:
         self.__addBeat()
 
 
-    def addCharacter(self, name, description, imagefile, notes = ''):
+    def addCharacter(self, name, description, imagefile, notes = '', keywords = []):
 
         imageId = self.__addImageFromFile(imagefile)
         if imageId > 0:
@@ -230,11 +230,14 @@ class PlottrContent:
 
         ch = { 'id': self.characterId, 'name': name, 'description': description, 'notes': n, 'color': None, 'cards': [], 'noteIds': [], 'templates': [], 'tags': [], 'categoryId': '1', 'imageId': image, 'bookIds': [1] }
 
+        if self.config['keywordsAreTags'] and len(keywords) > 0:
+            ch['tags'] = self.__matchKeywordsToTags(keywords)
+
         self.characters.append(ch)
         self.characterId = self.characterId + 1
 
 
-    def addPlace(self, name, description, imagefile, notes = ''):
+    def addPlace(self, name, description, imagefile, notes = '', keywords = ''):
 
         imageId = self.__addImageFromFile(imagefile)
         if imageId > 0:
@@ -248,6 +251,9 @@ class PlottrContent:
             n = []
 
         pl = { 'id': self.placeId, 'name': name, 'description': description, 'notes': n, 'color': None, 'cards': [], 'noteIds': [], 'templates': [], 'tags': [], 'imageId': image, 'bookIds': [1] }
+
+        if self.config['keywordsAreTags'] and len(keywords) > 0:
+            pl['tags'] = self.__matchKeywordsToTags(keywords)
 
         self.places.append(pl)
         self.placeId = self.placeId + 1
@@ -408,6 +414,18 @@ def read_bookinfo(scrivfile):
     plottr.setPremise(premise)
 
 
+def get_keywords(item):
+    """ Get any keywords attached to an item (scene, character, place, ...) """
+
+    keywords = []
+    child = item.find('./Keywords')
+    if child is not None:
+        for k in child.findall('KeywordID'):
+            keywords.append(k.text)
+
+    return keywords
+
+
 def read_characters(scrivfile, scrivp):
 
     global args, plottr
@@ -462,7 +480,9 @@ def read_characters(scrivfile, scrivp):
                 if len(n) > 0:
                     character_notes = n
 
-                plottr.addCharacter(character_name, character_desc, character_image, character_notes)
+                keywords = get_keywords(char)
+
+                plottr.addCharacter(character_name, character_desc, character_image, character_notes, keywords)
                 characters_read = characters_read + 1
 
                 if args.maxCharacters > 0 and characters_read == args.maxCharacters:
@@ -524,7 +544,9 @@ def read_places(scrivfile, scrivp):
                 if len(n) > 0:
                     place_notes = n
 
-                plottr.addPlace(place_name, place_desc, place_image, place_notes)
+                keywords = get_keywords(place)
+
+                plottr.addPlace(place_name, place_desc, place_image, place_notes, keywords)
                 places_read = places_read + 1
 
                 if args.maxPlaces > 0 and places_read == args.maxPlaces:
@@ -560,11 +582,7 @@ def parse_binderitem(item):
         if child is not None:
             label = child.text
 
-        keywords = []
-        child = item.find('./Keywords')
-        if child is not None:
-            for k in child.findall('KeywordID'):
-                keywords.append(k.text)
+        keywords = get_keywords(item)
 
         s = read_synopsis(args.scrivfile, item.attrib['UUID'])
 
