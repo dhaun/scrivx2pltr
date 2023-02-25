@@ -70,9 +70,9 @@ class PlottrContent:
 
     def __addImageFromFile(self, file):
         """ Reads an image from a file into the proper Plottr structure.
-        Returns the (internal) ID of the new image or 0 if not found. """
+        Returns the (internal) ID of the new image or -1 if not found. """
 
-        imgid = 0
+        imgid = -1
 
         if os.path.isfile(file):
             with open(file, 'rb') as fs:
@@ -94,11 +94,17 @@ class PlottrContent:
             else: # what other image types could there be?
                 imgtype = 'unknown'
             data = 'data:image/' + imgtype + ';base64,' + ibstring
-            image = { 'id': self.num_images, 'name': filename, 'path': file, 'data': data }
 
-            self.num_images = self.num_images + 1
-            self.images[str(self.num_images)] = image
+            # most filenames are actually just "card-image.jpg"
+            # use the uniq id of the directory to create a unique filename
+            d = os.path.dirname(file)
+            filename = os.path.basename(d) + '.' + ext
+
             imgid = self.num_images
+            image = { 'id': imgid, 'name': filename, 'path': file, 'data': data }
+
+            self.images[str(imgid)] = image
+            self.num_images = self.num_images + 1
 
         return imgid
 
@@ -218,7 +224,7 @@ class PlottrContent:
     def addCharacter(self, name, description, imagefile, notes = '', keywords = []):
 
         imageId = self.__addImageFromFile(imagefile)
-        if imageId > 0:
+        if imageId >= 0:
             image = str(imageId)
         else:
             image = ''
@@ -240,7 +246,7 @@ class PlottrContent:
     def addPlace(self, name, description, imagefile, notes = '', keywords = ''):
 
         imageId = self.__addImageFromFile(imagefile)
-        if imageId > 0:
+        if imageId >= 0:
             image = str(imageId)
         else:
             image = ''
